@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #161616;
+  color: #f2f2f2;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", -apple-system,
+    BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* PI-Desktop 标题栏安全区：宿主注入 46px 标题栏，面板内容从它之下开始 */
+#root {
+  height: calc(100vh - var(--pi-plugin-titlebar-height, 46px));
+}
+
+/* 滚动条：直角扁平 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5c5c5c;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Toast UI Editor 直角扁平化 ----------
+ * 全部元素直角（border-radius: 0）、无阴影，仅 1px 细边框分隔。
+ */
+.toastui-editor-defaultUI,
+.toastui-editor-defaultUI * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.toastui-editor-dark .toastui-editor-defaultUI {
+  background: transparent;
+  border: none;
+}
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
+  background: #1e1e1e !important;
+  border-color: #383838 !important;
+}
+.toastui-editor-dark .toastui-editor-md-tab-container {
+  border-color: #383838 !important;
+  background: #1e1e1e !important;
+}
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar button {
+  color: #a6a6a6;
+}
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar button:hover {
+  color: #f2f2f2;
+  background: #262626 !important;
+}
+.toastui-editor-dark .toastui-editor-md-splitter {
+  background: #383838;
+}
+.toastui-editor-md-preview,
+.toastui-editor-contents {
+  font-size: 14.5px;
+}
+
+/* KaTeX 在深色预览中的显示 */
+.toastui-editor-contents .katex-display {
+  margin: 12px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 代码块语言标签 */
+.toastui-editor-contents pre code::after {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  right: 8px;
+  font-size: 11px;
+  color: #a6a6a6;
+  opacity: 0.85;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
