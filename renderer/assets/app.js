@@ -88139,6 +88139,109 @@ def fib(n: int) -> int:
     ["code", "codeblock"]
   ];
   var MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+  function stripTextNodes(block2, count) {
+    let remaining = count;
+    const walker = document.createTreeWalker(block2, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const tn of nodes) {
+      if (remaining <= 0) break;
+      const t = tn.nodeValue ?? "";
+      const cut = Math.min(t.length, remaining);
+      tn.nodeValue = t.slice(cut);
+      remaining -= cut;
+    }
+  }
+  function caretOffsetIn(block2) {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return 0;
+    const pre2 = sel.getRangeAt(0).cloneRange();
+    pre2.selectNodeContents(block2);
+    pre2.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
+    return pre2.toString().length;
+  }
+  function setCaretByOffset(block2, offset) {
+    const walker = document.createTreeWalker(block2, NodeFilter.SHOW_TEXT);
+    let remaining = offset;
+    let node = null;
+    while (walker.nextNode()) {
+      node = walker.currentNode;
+      const len = (node.nodeValue ?? "").length;
+      if (len >= remaining) break;
+      remaining -= len;
+      node = null;
+    }
+    if (!node) return;
+    const range2 = document.createRange();
+    range2.setStart(node, Math.max(0, Math.min(remaining, (node.nodeValue ?? "").length)));
+    range2.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range2);
+  }
+  var MD_SHORTCUTS = [
+    { re: /^(#{1,6})\s+/, markerLen: 0, cmd: "heading" },
+    // 长度动态，见下方
+    { re: /^(-|\*)\s+/, markerLen: 2, cmd: "ul" },
+    { re: /^\d+[.)]\s+/, markerLen: 0, cmd: "ol" },
+    // 动态
+    { re: /^- \[[ xX]\]\s+/, markerLen: 0, cmd: "task" },
+    // 动态
+    { re: /^>\s+/, markerLen: 2, cmd: "quote" },
+    { re: /^(---|\*\*\*|___)\s*$/, markerLen: 0, cmd: "hr" }
+    // 动态
+  ];
+  function attachMarkdownShortcuts(ww, editor) {
+    window.__mdShortcutAttached = true;
+    let composing = false;
+    ww.addEventListener("compositionstart", () => {
+      composing = true;
+    });
+    ww.addEventListener("compositionend", () => {
+      composing = false;
+    });
+    ww.addEventListener("input", () => {
+      if (composing) return;
+      window.setTimeout(() => {
+        try {
+          const sel = window.getSelection();
+          if (!sel || !sel.rangeCount) return;
+          const anchor = sel.anchorNode;
+          const block2 = anchor && anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor;
+          if (!block2 || !ww.contains(block2)) return;
+          const tag = block2.tagName;
+          if (tag !== "P" && tag !== "DIV") return;
+          const line = block2.textContent ?? "";
+          let hit = null;
+          let markerLen = 0;
+          for (const s of MD_SHORTCUTS) {
+            const m = line.match(s.re);
+            if (!m) continue;
+            hit = s;
+            if (s.cmd === "heading") {
+              markerLen = m[1].length + 1;
+            } else if (s.cmd === "ol") {
+              markerLen = m[0].length;
+            } else if (s.cmd === "task") {
+              markerLen = m[0].length;
+            } else if (s.cmd === "hr") {
+              markerLen = line.length;
+            } else {
+              markerLen = s.markerLen;
+            }
+            break;
+          }
+          if (!hit) return;
+          const caretBefore = caretOffsetIn(block2);
+          stripTextNodes(block2, markerLen);
+          setCaretByOffset(block2, Math.max(0, caretBefore - markerLen));
+          const payload = hit.cmd === "heading" ? { level: line.match(/^(#{1,6})\s+/)[1].length } : hit.payload;
+          editor.exec(hit.cmd, payload);
+        } catch {
+        }
+      }, 0);
+    });
+  }
   function EditorPane({
     note,
     ready,
@@ -88183,13 +88286,15 @@ def fib(n: int) -> int:
         }
       });
       editorRef.current = editor;
+      window.__piEditor = editor;
       if (note) {
         noteIdRef.current = note.id;
         editor.setMarkdown(note.content, false);
       }
-      const preview = editor.getEditorElements().wysiwyg;
+      const preview = editor.getEditorElements().wwEditor;
       previewRef.current = preview ?? null;
       const containers = [preview].filter(Boolean);
+      if (preview) attachMarkdownShortcuts(preview, editor);
       let katexTimer = 0;
       const scheduleKatex = () => {
         window.clearTimeout(katexTimer);

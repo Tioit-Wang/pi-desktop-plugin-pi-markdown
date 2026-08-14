@@ -383,6 +383,9 @@ video {
 .pointer-events-none {
   pointer-events: none;
 }
+.collapse {
+  visibility: collapse;
+}
 .fixed {
   position: fixed;
 }
@@ -458,6 +461,9 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+.\!block {
+  display: block !important;
 }
 .block {
   display: block;

@@ -54,6 +54,133 @@ const TOOLBAR_ITEMS = [
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
+/* ---------- Typora 风格：WYSIWYG 输入 Markdown 标记自动转换 ---------- */
+
+/** 删除块内前 n 个字符（跨文本节点） */
+function stripTextNodes(block: HTMLElement, count: number): void {
+  let remaining = count;
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+  for (const tn of nodes) {
+    if (remaining <= 0) break;
+    const t = tn.nodeValue ?? "";
+    const cut = Math.min(t.length, remaining);
+    tn.nodeValue = t.slice(cut);
+    remaining -= cut;
+  }
+}
+
+/** 光标在块文本中的绝对偏移 */
+function caretOffsetIn(block: HTMLElement): number {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return 0;
+  const pre = sel.getRangeAt(0).cloneRange();
+  pre.selectNodeContents(block);
+  pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
+  return pre.toString().length;
+}
+
+/** 按绝对偏移放置光标 */
+function setCaretByOffset(block: HTMLElement, offset: number): void {
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node: Text | null = null;
+  while (walker.nextNode()) {
+    node = walker.currentNode as Text;
+    const len = (node.nodeValue ?? "").length;
+    if (len >= remaining) break;
+    remaining -= len;
+    node = null;
+  }
+  if (!node) return;
+  const range = document.createRange();
+  range.setStart(node, Math.max(0, Math.min(remaining, (node.nodeValue ?? "").length)));
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+}
+
+interface MdShortcut {
+  re: RegExp;
+  markerLen: number;
+  cmd: string;
+  payload?: unknown;
+}
+
+/** 行首 Markdown 标记 → 编辑器命令 */
+const MD_SHORTCUTS: MdShortcut[] = [
+  { re: /^(#{1,6})\s+/, markerLen: 0, cmd: "heading" }, // 长度动态，见下方
+  { re: /^(-|\*)\s+/, markerLen: 2, cmd: "ul" },
+  { re: /^\d+[.)]\s+/, markerLen: 0, cmd: "ol" }, // 动态
+  { re: /^- \[[ xX]\]\s+/, markerLen: 0, cmd: "task" }, // 动态
+  { re: /^>\s+/, markerLen: 2, cmd: "quote" },
+  { re: /^(---|\*\*\*|___)\s*$/, markerLen: 0, cmd: "hr" }, // 动态
+];
+
+/** WYSIWYG 容器 input 监听：识别行首标记并转换 */
+function attachMarkdownShortcuts(ww: HTMLElement, editor: Editor): void {
+  // 挂载标志（调试/测试用）
+  (window as unknown as { __mdShortcutAttached?: boolean }).__mdShortcutAttached =
+    true;
+  let composing = false;
+  ww.addEventListener("compositionstart", () => {
+    composing = true;
+  });
+  ww.addEventListener("compositionend", () => {
+    composing = false;
+  });
+  ww.addEventListener("input", () => {
+    if (composing) return;
+    // 延迟到 toastui 处理完当前输入后再转换
+    window.setTimeout(() => {
+      try {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        const anchor = sel.anchorNode;
+        const block =
+          anchor && anchor.nodeType === Node.TEXT_NODE
+            ? (anchor.parentElement as HTMLElement | null)
+            : (anchor as HTMLElement | null);
+        if (!block || !ww.contains(block)) return;
+        // 仅在普通段落/块中转换（标题、列表项、引用内不处理）
+        const tag = block.tagName;
+        if (tag !== "P" && tag !== "DIV") return;
+        const line = block.textContent ?? "";
+        let hit: MdShortcut | null = null;
+        let markerLen = 0;
+        for (const s of MD_SHORTCUTS) {
+          const m = line.match(s.re);
+          if (!m) continue;
+          hit = s;
+          if (s.cmd === "heading") {
+            markerLen = m[1].length + 1;
+          } else if (s.cmd === "ol") {
+            markerLen = m[0].length;
+          } else if (s.cmd === "task") {
+            markerLen = m[0].length;
+          } else if (s.cmd === "hr") {
+            markerLen = line.length;
+          } else {
+            markerLen = s.markerLen;
+          }
+          break;
+        }
+        if (!hit) return;
+        const caretBefore = caretOffsetIn(block);
+        stripTextNodes(block, markerLen);
+        setCaretByOffset(block, Math.max(0, caretBefore - markerLen));
+        const payload =
+          hit.cmd === "heading" ? { level: (line.match(/^(#{1,6})\s+/) as RegExpMatchArray)[1].length } : hit.payload;
+        editor.exec(hit.cmd, payload);
+      } catch {
+        /* 转换失败时保持原文，不干扰输入 */
+      }
+    }, 0);
+  });
+}
+
 export default function EditorPane({
   note,
   ready,
@@ -104,6 +231,8 @@ export default function EditorPane({
       }) as AddImageBlobHook,
     });
     editorRef.current = editor;
+    // 调试/测试用：暴露编辑器实例（生产无害）
+    (window as unknown as { __piEditor?: Editor }).__piEditor = editor;
 
     // 创建后立即加载当前笔记内容（若 init 已完成；否则由切换笔记 effect 加载）
     if (note) {
@@ -111,10 +240,13 @@ export default function EditorPane({
       editor.setMarkdown(note.content, false);
     }
 
-    // WYSIWYG 模式：可视容器为 wysiwyg（mdPreview 不存在/隐藏）
-    const preview = editor.getEditorElements().wysiwyg;
+    // WYSIWYG 模式：可视容器为 wwEditor（toastui 3.x 的 getEditorElements 键名）
+    const preview = editor.getEditorElements().wwEditor;
     previewRef.current = preview ?? null;
     const containers = [preview].filter(Boolean) as HTMLElement[];
+
+    // Typora 风格：输入 # / - / > 等 Markdown 标记自动转换
+    if (preview) attachMarkdownShortcuts(preview, editor);
 
     /* KaTeX：预览 DOM 变化后处理公式 */
     let katexTimer = 0;

@@ -52,11 +52,11 @@ declare module "@toast-ui/editor" {
     getEditorElements(): {
       mdEditor?: HTMLElement;
       mdPreview?: HTMLElement;
-      wysiwyg?: HTMLElement;
-      wysiwygEditor?: HTMLElement;
+      wwEditor?: HTMLElement;
     };
     on(event: string, handler: (...args: unknown[]) => void): void;
     off(event: string, handler?: (...args: unknown[]) => void): void;
+    exec(commandName: string, payload?: unknown): void;
     destroy(): void;
   }
 }
