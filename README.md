@@ -19,12 +19,12 @@
 
 ## 构建
 
-面板源码在 `renderer-src/`（Vite + React + TS + Tailwind），构建产物输出到 `renderer/`：
+面板源码在 `renderer-src/`（React + TS + Tailwind，**esbuild** 构建——宿主以 `file://` 协议加载面板，module script 会被 Chromium CORS 阻止，故输出 IIFE 单文件 + 静态入口）：
 
 ```bash
 cd renderer-src
 npm install
-npm run build     # 产物 → ../renderer（index.html + assets）
+npm run build     # 生成 src/generated/prism-imports.ts + 产物 → ../renderer（index.html + assets/app.js + app.css）
 npm run typecheck
 ```
 

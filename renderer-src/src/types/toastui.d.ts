@@ -22,7 +22,7 @@ declare module "@toast-ui/editor" {
     | "image"
     | "link"
     | "code"
-    | "codeBlock"
+    | "codeblock"
     | "more";
 
   export interface EditorOptions {
@@ -49,7 +49,6 @@ declare module "@toast-ui/editor" {
     getCurrentMode(): EditorType;
     changeMode(mode: EditorType, destroy?: boolean): void;
     changePreviewStyle(style: PreviewStyle): void;
-    getPreviewElement(): HTMLElement;
     getEditorElements(): {
       mdEditor?: HTMLElement;
       mdPreview?: HTMLElement;

@@ -34,7 +34,7 @@ const TOOLBAR_ITEMS = [
   ["ul", "ol", "task"],
   ["indent", "outdent"],
   ["table", "image", "link"],
-  ["code", "codeBlock"],
+  ["code", "codeblock"],
 ] as (
   | "heading"
   | "bold"
@@ -51,7 +51,7 @@ const TOOLBAR_ITEMS = [
   | "image"
   | "link"
   | "code"
-  | "codeBlock"
+  | "codeblock"
 )[][];
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -108,9 +108,15 @@ export default function EditorPane({
     });
     editorRef.current = editor;
 
-    const preview = editor.getPreviewElement();
+    // 创建后立即加载当前笔记内容（若 init 已完成；否则由切换笔记 effect 加载）
+    if (note) {
+      noteIdRef.current = note.id;
+      editor.setMarkdown(note.content, false);
+    }
+
+    const preview = editor.getEditorElements().mdPreview;
     const wysiwyg = editor.getEditorElements().wysiwyg;
-    previewRef.current = preview;
+    previewRef.current = preview ?? null;
     const containers = [preview, wysiwyg].filter(Boolean) as HTMLElement[];
 
     /* KaTeX：预览 DOM 变化后处理公式 */
@@ -238,46 +244,45 @@ export default function EditorPane({
     apiRef.current?.applyViewMode(viewMode);
   }, [viewMode]);
 
-  if (!note) {
-    return (
-      <main className="flex min-w-0 flex-1 flex-col items-center justify-center gap-4 bg-bg text-muted">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-14 w-14 opacity-40"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.2"
-        >
-          <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" />
-          <path d="M14 3v5h5M9 13h6M9 17h6" />
-        </svg>
-        <p className="text-sm">从左侧选择一篇笔记，或新建一篇开始写作</p>
-        <button
-          onClick={() => dispatch({ type: "newNote", parentId: null })}
-          className="bg-accent px-4 py-2 text-xs text-black hover:bg-accent2"
-        >
-          新建笔记
-        </button>
-      </main>
-    );
-  }
-
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-bg">
+    <main className="relative flex min-w-0 flex-1 flex-col bg-bg">
       <div className="flex shrink-0 items-center gap-3 border-b border-edge px-5 pb-2 pt-3">
         <input
-          value={note.title}
+          value={note?.title ?? ""}
           onChange={(e) =>
-            dispatch({ type: "rename", id: note.id, name: e.target.value })
+            note && dispatch({ type: "rename", id: note.id, name: e.target.value })
           }
           placeholder="笔记标题"
-          className="min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint"
+          disabled={!note}
+          className="min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint disabled:cursor-default"
         />
         <span className="shrink-0 text-[10px] text-faint">
           Markdown ⇄ 所见即所得 可随时切换
         </span>
       </div>
+      {/* 宿主 div 常驻：编辑器创建与笔记切换不受 activeNote 空/非空影响 */}
       <div ref={hostRef} className="toastui-editor-dark min-h-0 flex-1" />
+      {!note && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg text-muted">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-14 w-14 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.2"
+          >
+            <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" />
+            <path d="M14 3v5h5M9 13h6M9 17h6" />
+          </svg>
+          <p className="text-sm">从左侧选择一篇笔记，或新建一篇开始写作</p>
+          <button
+            onClick={() => dispatch({ type: "newNote", parentId: null })}
+            className="bg-accent px-4 py-2 text-xs text-black hover:bg-accent2"
+          >
+            新建笔记
+          </button>
+        </div>
+      )}
     </main>
   );
 }
