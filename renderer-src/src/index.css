@@ -8,15 +8,75 @@ body,
   height: 100%;
 }
 
+/* ========== 主题变量 ==========
+ * 全部颜色经 CSS 变量注入（RGB 通道三元组，Tailwind 以 rgb(var(--c-x) / alpha) 引用）。
+ * 默认（无 data-theme）= 米白浅色；html[data-theme="dark"] 切换黑夜。
+ */
+:root,
+:root[data-theme="light"] {
+  /* 米白系（cream） */
+  --c-bg: 247 245 241;        /* #f7f5f1 米白 */
+  --c-panel: 251 250 247;     /* #fbfaf7 侧栏/状态栏 */
+  --c-panel2: 240 237 230;    /* #f0ede6 悬浮/次级 */
+  --c-edge: 230 225 215;      /* #e6e1d7 */
+  --c-edge2: 213 207 194;     /* #d5cfc2 */
+  --c-accent: 51 50 47;       /* #33322f 主按钮/激活项 */
+  --c-accent2: 74 72 68;      /* #4a4844 */
+  --c-onaccent: 247 245 241;
+  --c-ink: 46 44 41;          /* #2e2c29 正文 */
+  --c-muted: 111 106 97;      /* #6f6a61 */
+  --c-faint: 155 149 138;     /* #9b958a */
+  --c-danger: 201 60 66;      /* #c93c42 */
+  --c-ok: 46 139 87;          /* #2e8b57 */
+  --c-scroll: 203 197 185;
+  --c-scroll-hover: 181 174 160;
+  --c-selection: 206 199 186;
+  --c-caret: 46 44 41;
+  --c-quote: 87 83 78;
+  --c-code-bg: 251 250 247;
+  --c-code-border: 230 225 215;
+  --c-code-ink: 64 63 60;
+  --c-lang-tag: 155 149 138;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  /* 黑夜系（延续既有中性灰） */
+  --c-bg: 22 22 22;           /* #161616 */
+  --c-panel: 30 30 30;        /* #1e1e1e */
+  --c-panel2: 38 38 38;       /* #262626 */
+  --c-edge: 56 56 56;         /* #383838 */
+  --c-edge2: 74 74 74;        /* #4a4a4a */
+  --c-accent: 245 245 245;    /* #f5f5f5 */
+  --c-accent2: 255 255 255;   /* #ffffff */
+  --c-onaccent: 0 0 0;
+  --c-ink: 242 242 242;       /* #f2f2f2 */
+  --c-muted: 166 166 166;     /* #a6a6a6 */
+  --c-faint: 115 115 115;     /* #737373 */
+  --c-danger: 229 72 77;      /* #e5484d */
+  --c-ok: 48 164 108;         /* #30a46c */
+  --c-scroll: 74 74 74;
+  --c-scroll-hover: 92 92 92;
+  --c-selection: 74 74 74;
+  --c-caret: 242 242 242;
+  --c-quote: 201 201 201;
+  --c-code-bg: 30 30 30;
+  --c-code-border: 46 46 46;
+  --c-code-ink: 214 214 214;
+  --c-lang-tag: 166 166 166;
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   overflow: hidden;
-  background: #161616;
-  color: #f2f2f2;
+  background: rgb(var(--c-bg));
+  color: rgb(var(--c-ink));
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", -apple-system,
     BlinkMacSystemFont, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 /* PI-Desktop 标题栏安全区：宿主注入 46px 标题栏，面板内容从它之下开始 */
@@ -24,81 +84,278 @@ body {
   height: calc(100vh - var(--pi-plugin-titlebar-height, 46px));
 }
 
-/* 滚动条：直角扁平 */
+/* 滚动条：直角扁平，随主题变色 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
+  background: rgb(var(--c-scroll));
   border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5c5c5c;
+  background: rgb(var(--c-scroll-hover));
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* ---------- Toast UI Editor 直角扁平化 ----------
- * 全部元素直角（border-radius: 0）、无阴影，仅 1px 细边框分隔。
- */
-.toastui-editor-defaultUI,
-.toastui-editor-defaultUI * {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-.toastui-editor-dark .toastui-editor-defaultUI {
-  background: transparent;
-  border: none;
-}
-.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
-  background: #1e1e1e !important;
-  border-color: #383838 !important;
-}
-.toastui-editor-dark .toastui-editor-md-tab-container {
-  border-color: #383838 !important;
-  background: #1e1e1e !important;
-}
-.toastui-editor-dark .toastui-editor-defaultUI-toolbar button {
-  color: #a6a6a6;
-}
-.toastui-editor-dark .toastui-editor-defaultUI-toolbar button:hover {
-  color: #f2f2f2;
-  background: #262626 !important;
-}
-.toastui-editor-dark .toastui-editor-md-splitter {
-  background: #383838;
-}
-.toastui-editor-md-preview,
-.toastui-editor-contents {
-  font-size: 14.5px;
+::selection {
+  background: rgb(var(--c-selection));
 }
 
-/* KaTeX 在深色预览中的显示 */
-.toastui-editor-contents .katex-display {
+/* ========== Milkdown / Crepe 主题 ========== */
+
+/* 米白（默认） */
+.milkdown {
+  --crepe-color-background: #f7f5f1;
+  --crepe-color-on-background: #2e2c29;
+  --crepe-color-surface: #ffffff;
+  --crepe-color-surface-low: #fbfaf7;
+  --crepe-color-on-surface: #2e2c29;
+  --crepe-color-on-surface-variant: #6f6a61;
+  --crepe-color-outline: #d5cfc2;
+  --crepe-color-primary: #33322f;
+  --crepe-color-secondary: #f0ede6;
+  --crepe-color-on-secondary: #2e2c29;
+  --crepe-color-inverse: #2e2c29;
+  --crepe-color-on-inverse: #f7f5f1;
+  --crepe-color-inline-code: #b45309;
+  --crepe-color-error: #c93c42;
+  --crepe-color-hover: #f0ede6;
+  --crepe-color-selected: #e4ded2;
+  --crepe-color-inline-area: #f0ede6;
+
+  --crepe-font-default: "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    -apple-system, BlinkMacSystemFont, sans-serif;
+  --crepe-font-title: "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    -apple-system, BlinkMacSystemFont, sans-serif;
+  --crepe-font-code: "Cascadia Code", Consolas, Menlo, Monaco, "Courier New",
+    monospace;
+}
+
+/* 黑夜 */
+[data-theme="dark"] .milkdown {
+  --crepe-color-background: #161616;
+  --crepe-color-on-background: #f2f2f2;
+  --crepe-color-surface: #1e1e1e;
+  --crepe-color-surface-low: #1e1e1e;
+  --crepe-color-on-surface: #f2f2f2;
+  --crepe-color-on-surface-variant: #a6a6a6;
+  --crepe-color-outline: #4a4a4a;
+  --crepe-color-primary: #f5f5f5;
+  --crepe-color-secondary: #262626;
+  --crepe-color-on-secondary: #f2f2f2;
+  --crepe-color-inverse: #f2f2f2;
+  --crepe-color-on-inverse: #161616;
+  --crepe-color-inline-code: #ffb86c;
+  --crepe-color-error: #e5484d;
+  --crepe-color-hover: #262626;
+  --crepe-color-selected: #383838;
+  --crepe-color-inline-area: #2a2a2a;
+}
+
+/* 编辑区：收窄默认的巨大留白（60px 120px → 40px 64px），底部留出书写余量 */
+.milkdown .ProseMirror {
+  padding: 24px 64px 45vh;
+  font-size: 14.5px;
+  line-height: 1.6;
+  caret-color: rgb(var(--c-caret));
+}
+
+/* 标题字号略微收敛（Crepe 默认偏大） */
+.milkdown .ProseMirror h1 {
+  font-size: 2em;
+  margin-top: 28px;
+}
+.milkdown .ProseMirror h2 {
+  font-size: 1.7em;
+  margin-top: 24px;
+}
+.milkdown .ProseMirror h3 {
+  font-size: 1.45em;
+  margin-top: 20px;
+}
+.milkdown .ProseMirror h4 {
+  font-size: 1.25em;
+  margin-top: 16px;
+}
+.milkdown .ProseMirror h5 {
+  font-size: 1.1em;
+  margin-top: 14px;
+}
+.milkdown .ProseMirror h6 {
+  font-size: 1em;
+  margin-top: 14px;
+}
+
+/* 引用块 */
+.milkdown .ProseMirror blockquote {
+  color: rgb(var(--c-quote));
+}
+.milkdown .ProseMirror blockquote::before {
+  background: rgb(var(--c-edge2));
+}
+
+/* 代码块 */
+.milkdown .ProseMirror pre {
+  background: rgb(var(--c-code-bg));
+  border: 1px solid rgb(var(--c-code-border));
+  border-radius: 4px;
+  color: rgb(var(--c-code-ink));
+}
+.milkdown .ProseMirror pre code {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* 代码块预览（Prism 高亮 / KaTeX 公式） */
+.milkdown .ProseMirror pre.code-preview {
+  margin: 0;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+.milkdown .code-block-preview,
+.milkdown .preview-panel {
+  background: rgb(var(--c-code-bg));
+}
+.milkdown .preview-panel {
+  border-radius: 4px;
+}
+.milkdown .preview-panel .preview-divider {
+  background: rgb(var(--c-edge));
+}
+.milkdown .preview-panel .preview-label {
+  color: rgb(var(--c-faint));
+}
+
+/* 代码块语言标签（data-language 由 Crepe 代码块组件写入） */
+.milkdown .ProseMirror pre[data-language]::after {
+  content: attr(data-language);
+  display: block;
+  text-align: right;
+  font-size: 11px;
+  color: rgb(var(--c-lang-tag));
+  opacity: 0.85;
+  user-select: none;
+}
+
+/* KaTeX 公式 */
+.milkdown .katex-display {
   margin: 12px 0;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-/* ---------- 工具栏与图片缩小三分之一（zoom 等比缩放） ---------- */
-.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
-  zoom: 0.667;
+/* CodeMirror 代码块编辑区：浅色跟随默认主题（深色由 oneDark 接管，不做覆盖） */
+.milkdown .cm-editor {
+  border-radius: 4px;
 }
-.toastui-editor-contents img {
-  zoom: 0.667;
+.milkdown .cm-editor.cm-focused {
+  outline: none;
+}
+[data-theme="light"] .milkdown .cm-editor .cm-gutters {
+  background: transparent;
+  border-right: 1px solid rgb(var(--c-edge));
+  color: rgb(var(--c-faint));
+}
+[data-theme="light"] .milkdown .cm-editor .cm-activeLine,
+[data-theme="light"] .milkdown .cm-editor .cm-activeLineGutter {
+  background: rgb(var(--c-panel2));
 }
 
-/* 代码块语言标签 */
-.toastui-editor-contents pre code::after {
-  content: attr(data-language);
-  position: absolute;
-  top: 0;
-  right: 8px;
-  font-size: 11px;
-  color: #a6a6a6;
-  opacity: 0.85;
+/* 图片圆角适度 */
+.milkdown .ProseMirror img {
+  border-radius: 4px;
+}
+
+/* 占位符 */
+.milkdown .crepe-placeholder::before {
+  color: rgb(var(--c-faint));
+}
+
+/* ========== Prism 代码高亮 ==========
+ * 默认跟随 prism-tomorrow（深色）；米白主题与导出文档（.pi-md-export，恒为浅色）
+ * 用下方覆盖改为浅色 token。
+ */
+[data-theme="light"] .token,
+.pi-md-export .token {
+  color: #403f3c;
+}
+[data-theme="light"] .token.comment,
+[data-theme="light"] .token.prolog,
+[data-theme="light"] .token.doctype,
+[data-theme="light"] .token.cdata,
+.pi-md-export .token.comment,
+.pi-md-export .token.prolog,
+.pi-md-export .token.doctype,
+.pi-md-export .token.cdata {
+  color: #8b8577;
+  font-style: italic;
+}
+[data-theme="light"] .token.punctuation,
+.pi-md-export .token.punctuation {
+  color: #6f6a61;
+}
+[data-theme="light"] .token.property,
+[data-theme="light"] .token.tag,
+[data-theme="light"] .token.boolean,
+[data-theme="light"] .token.number,
+[data-theme="light"] .token.constant,
+[data-theme="light"] .token.symbol,
+[data-theme="light"] .token.deleted,
+.pi-md-export .token.property,
+.pi-md-export .token.tag,
+.pi-md-export .token.boolean,
+.pi-md-export .token.number,
+.pi-md-export .token.constant,
+.pi-md-export .token.symbol,
+.pi-md-export .token.deleted {
+  color: #0b5cad;
+}
+[data-theme="light"] .token.selector,
+[data-theme="light"] .token.attr-name,
+[data-theme="light"] .token.string,
+[data-theme="light"] .token.char,
+[data-theme="light"] .token.builtin,
+[data-theme="light"] .token.inserted,
+.pi-md-export .token.selector,
+.pi-md-export .token.attr-name,
+.pi-md-export .token.string,
+.pi-md-export .token.char,
+.pi-md-export .token.builtin,
+.pi-md-export .token.inserted {
+  color: #1a7f37;
+}
+[data-theme="light"] .token.operator,
+[data-theme="light"] .token.entity,
+[data-theme="light"] .token.url,
+.pi-md-export .token.operator,
+.pi-md-export .token.entity,
+.pi-md-export .token.url {
+  color: #6f42c1;
+}
+[data-theme="light"] .token.keyword,
+.pi-md-export .token.keyword {
+  color: #cf222e;
+}
+[data-theme="light"] .token.function,
+[data-theme="light"] .token.class-name,
+.pi-md-export .token.function,
+.pi-md-export .token.class-name {
+  color: #8250df;
+}
+[data-theme="light"] .token.regex,
+[data-theme="light"] .token.important,
+[data-theme="light"] .token.variable,
+.pi-md-export .token.regex,
+.pi-md-export .token.important,
+.pi-md-export .token.variable {
+  color: #953800;
+}
+[data-theme="light"] .token.attr-value,
+.pi-md-export .token.attr-value {
+  color: #1a7f37;
 }
 
 @keyframes toastIn {

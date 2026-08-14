@@ -1,6 +1,39 @@
 import html2canvas from "html2canvas";
+import katex from "katex";
+import { refractor } from "refractor";
 import type { ExportKind, NoteNode } from "../types";
-import { processKatex } from "./katex";
+import { registerRefractorLanguages } from "../generated/refractor-imports";
+import { hastToHtml } from "./hast";
+
+/** 惰性注册全部 refractor（Prism）语言（编辑器初始化时已注册过，此处为防御性兜底） */
+let refractorReady = false;
+function ensureRefractorLanguages(): void {
+  if (refractorReady) return;
+  refractorReady = true;
+  try {
+    registerRefractorLanguages(refractor);
+  } catch {
+    /* 注册失败不阻塞导出（未知语言会原样输出） */
+  }
+}
+
+/** refractor 高亮代码为 HTML（带 .token 着色），失败返回 null */
+export function highlightCodeHtml(
+  language: string,
+  content: string,
+): string | null {
+  const lang = (language || "").toLowerCase();
+  if (!lang || !content.trim()) return null;
+  try {
+    const root = refractor.highlight(content, lang) as {
+      children?: Parameters<typeof hastToHtml>[0][];
+    };
+    const body = (root.children ?? []).map(hastToHtml).join("");
+    return `<pre class="code-preview"><code class="language-${lang}">${body}</code></pre>`;
+  } catch {
+    return null;
+  }
+}
 
 /** 触发浏览器下载（Blob） */
 function download(name: string, data: BlobPart, mime: string): void {
@@ -45,23 +78,67 @@ function collectStyles(): string {
   return parts.join("\n");
 }
 
-function buildHtml(getHtml: () => string): string {
+/**
+ * 由 Markdown 源码构建导出用 HTML：
+ * 1. 经编辑器 parser+serializer 转换（行内公式由 math_inline.toDOM 渲染为 KaTeX）；
+ * 2. 块级公式（code_block lang=latex）→ KaTeX display 公式；
+ * 3. 其余代码块 → refractor 重新语法高亮。
+ *
+ * 不依赖实时编辑器 DOM——离屏的代码块/公式在编辑器里会被回收为占位符，
+ * 用实时 DOM 导出会得到原始 LaTeX 源码与 Vue 组件噪声。
+ */
+function renderBlockHtml(
+  markdown: string,
+  getHtmlFromMarkdown: (md: string) => string,
+): string {
+  ensureRefractorLanguages();
   const div = document.createElement("div");
-  div.innerHTML = getHtml();
-  processKatex(div);
+  div.innerHTML = getHtmlFromMarkdown(markdown);
+  const pres = Array.from(
+    div.querySelectorAll<HTMLPreElement>("pre[data-language]"),
+  );
+  for (const pre of pres) {
+    const lang = (pre.getAttribute("data-language") ?? "").toLowerCase();
+    const code = pre.querySelector("code");
+    const text = code?.textContent ?? "";
+    if (lang === "latex" && text.trim()) {
+      const wrap = document.createElement("div");
+      wrap.className = "katex-display";
+      wrap.innerHTML = katex.renderToString(text, {
+        displayMode: true,
+        throwOnError: false,
+      });
+      pre.replaceWith(wrap);
+      continue;
+    }
+    if (code) {
+      const highlighted = highlightCodeHtml(lang, text);
+      if (highlighted) {
+        const temp = document.createElement("div");
+        temp.innerHTML = highlighted;
+        pre.replaceWith(temp.firstElementChild as Element);
+      }
+    }
+  }
   return div.innerHTML;
 }
 
 export function exportNote(
   kind: ExportKind,
   note: NoteNode,
-  getHtml: () => string,
+  getMarkdown: () => string,
+  getHtmlFromMarkdown: (md: string) => string,
 ): Promise<void> | void {
+  const markdown = getMarkdown();
   if (kind === "md") {
-    download(`${safeName(note.title)}.md`, note.content, "text/markdown;charset=utf-8");
+    download(
+      `${safeName(note.title)}.md`,
+      markdown,
+      "text/markdown;charset=utf-8",
+    );
     return;
   }
-  const bodyHtml = buildHtml(getHtml);
+  const bodyHtml = renderBlockHtml(markdown, getHtmlFromMarkdown);
   if (kind === "html") {
     const doc = `<!doctype html>
 <html lang="zh-CN">
@@ -71,12 +148,14 @@ export function exportNote(
 <title>${escapeHtml(note.title)}</title>
 <style>
 ${collectStyles()}
-body{background:#ffffff;color:#1b2430;padding:40px 24px;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
-.toastui-editor-contents{max-width:860px;margin:0 auto}
+body{background:#ffffff;color:#1b2430;padding:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 </style>
 </head>
 <body>
-<div class="toastui-editor-contents">${bodyHtml}</div>
+<div class="milkdown pi-md-export"
+  style="--crepe-color-background:#ffffff;--crepe-color-on-background:#1b2430;--crepe-color-inline-code:#d6336c;--crepe-color-primary:#0969da;--crepe-color-inline-area:#eef1f5;--crepe-color-selected:#e2e8f0;--crepe-color-outline:#cbd5e1;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f6f8fa;--crepe-color-on-surface:#1b2430;--crepe-color-on-surface-variant:#57606a;--crepe-color-hover:#eef1f5">
+  <div class="editor ProseMirror" style="padding:40px 24px;max-width:860px;margin:0 auto">${bodyHtml}</div>
+</div>
 </body>
 </html>`;
     download(`${safeName(note.title)}.html`, doc, "text/html;charset=utf-8");
@@ -85,10 +164,11 @@ body{background:#ffffff;color:#1b2430;padding:40px 24px;font-family:"Segoe UI","
   // PNG：隐藏容器 + html2canvas
   return (async () => {
     const wrap = document.createElement("div");
-    wrap.className = "toastui-editor-contents";
+    wrap.className = "milkdown pi-md-export";
     wrap.style.cssText =
-      "position:fixed;left:-9999px;top:0;width:860px;background:#ffffff;color:#1b2430;padding:48px;box-sizing:border-box;z-index:-1;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;";
-    wrap.innerHTML = bodyHtml;
+      "position:fixed;left:-9999px;top:0;width:860px;background:#ffffff;color:#1b2430;box-sizing:border-box;z-index:-1;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;" +
+      "--crepe-color-background:#ffffff;--crepe-color-on-background:#1b2430;--crepe-color-inline-code:#d6336c;--crepe-color-primary:#0969da;--crepe-color-inline-area:#eef1f5;--crepe-color-selected:#e2e8f0;--crepe-color-outline:#cbd5e1;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f6f8fa;--crepe-color-on-surface:#1b2430;--crepe-color-on-surface-variant:#57606a;--crepe-color-hover:#eef1f5";
+    wrap.innerHTML = `<div class="editor ProseMirror" style="padding:48px">${bodyHtml}</div>`;
     document.body.appendChild(wrap);
     try {
       const canvas = await html2canvas(wrap, {

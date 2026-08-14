@@ -19,6 +19,8 @@ export type DropPos = "before" | "inside" | "after";
 
 export type SideTab = "notes" | "outline";
 
+export type ThemeMode = "light" | "dark";
+
 export type SaveStatus = "saved" | "saving" | "error";
 
 export interface SaveState {
@@ -47,6 +49,7 @@ export interface AppState {
   query: string;
   saveState: SaveState;
   dataDir: string | null;
+  theme: ThemeMode;
 }
 
 export type ExportKind = "md" | "html" | "png";

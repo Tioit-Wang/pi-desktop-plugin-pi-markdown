@@ -110,7 +110,7 @@ function Row({
       }}
       className={`group relative flex cursor-pointer select-none items-center gap-1.5 pr-2 text-[13px] transition-colors ${
         active
-          ? "bg-accent text-black"
+          ? "bg-accent text-onaccent"
           : "text-muted hover:bg-panel2 hover:text-ink"
       }`}
       style={{ paddingLeft: `${depth * 14 + 8}px`, minHeight: 28 }}

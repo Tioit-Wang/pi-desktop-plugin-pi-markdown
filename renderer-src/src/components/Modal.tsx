@@ -92,7 +92,7 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
           </button>
           {isInput ? (
             <button
-              className="bg-accent px-3.5 py-1.5 text-xs text-black hover:bg-accent2"
+              className="bg-accent px-3.5 py-1.5 text-xs text-onaccent hover:bg-accent2"
               onClick={() => onSubmit(inputRef.current?.value)}
             >
               确定

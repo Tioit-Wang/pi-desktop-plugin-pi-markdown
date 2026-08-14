@@ -1,287 +1,105 @@
 import { useEffect, useRef } from "react";
-import Editor from "@toast-ui/editor";
-import codeSyntaxHighlight from "@toast-ui/editor-plugin-code-syntax-highlight";
-import Prism from "prismjs";
-import type { NoteNode } from "../types";
-import { processKatex } from "../lib/katex";
+import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { keymap } from "@codemirror/view";
+import { Crepe } from "@milkdown/crepe";
+import { EditorStatus, parserCtx, schemaCtx } from "@milkdown/kit/core";
+import { codeBlockConfig } from "@milkdown/kit/component/code-block";
+import { DOMSerializer } from "@milkdown/kit/prose/model";
+import { prism, prismConfig } from "@milkdown/plugin-prism";
+import { replaceAll } from "@milkdown/utils";
+import { basicSetup } from "codemirror";
+import type { NoteNode, ThemeMode } from "../types";
+import { registerRefractorLanguages } from "../generated/refractor-imports";
+import { highlightCodeHtml } from "../lib/exporters";
 import { toast } from "../lib/toast";
 import { useAppDispatch } from "../store";
 
-type AddImageBlobHook = (
-  blob: File | Blob,
-  callback: (url: string, text?: string) => void,
-) => void;
-
 export interface EditorApi {
   getMarkdown(): string;
-  getHtml(): string;
+  /** 由 Markdown 源码经编辑器 parser+serializer 生成完整 HTML（导出用，含 KaTeX 行内公式） */
+  getHtmlFromMarkdown(markdown: string): string;
   scrollToHeading(index: number): void;
 }
 
 interface Props {
   note: NoteNode | null;
-  ready: boolean;
   registerApi(api: EditorApi | null): void;
   onHeadingChange(index: number): void;
+  theme: ThemeMode;
 }
-
-/** 自定义工具栏：标题、强调、列表（含任务）、表格、图片、链接、代码（含代码块） */
-const TOOLBAR_ITEMS = [
-  ["heading", "bold", "italic", "strike"],
-  ["hr", "quote"],
-  ["ul", "ol", "task"],
-  ["indent", "outdent"],
-  ["table", "image", "link"],
-  ["code", "codeblock"],
-] as (
-  | "heading"
-  | "bold"
-  | "italic"
-  | "strike"
-  | "hr"
-  | "quote"
-  | "ul"
-  | "ol"
-  | "task"
-  | "indent"
-  | "outdent"
-  | "table"
-  | "image"
-  | "link"
-  | "code"
-  | "codeblock"
-)[][];
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
-/* ---------- Typora 风格：WYSIWYG 输入 Markdown 标记自动转换 ---------- */
-
-/** 删除块内前 n 个字符（跨文本节点） */
-function stripTextNodes(block: HTMLElement, count: number): void {
-  let remaining = count;
-  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
-  for (const tn of nodes) {
-    if (remaining <= 0) break;
-    const t = tn.nodeValue ?? "";
-    const cut = Math.min(t.length, remaining);
-    tn.nodeValue = t.slice(cut);
-    remaining -= cut;
-  }
-}
-
-/** 光标在块文本中的绝对偏移 */
-function caretOffsetIn(block: HTMLElement): number {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return 0;
-  const pre = sel.getRangeAt(0).cloneRange();
-  pre.selectNodeContents(block);
-  pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
-  return pre.toString().length;
-}
-
-/** 按绝对偏移放置光标 */
-function setCaretByOffset(block: HTMLElement, offset: number): void {
-  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-  let remaining = offset;
-  let node: Text | null = null;
-  while (walker.nextNode()) {
-    node = walker.currentNode as Text;
-    const len = (node.nodeValue ?? "").length;
-    if (len >= remaining) break;
-    remaining -= len;
-    node = null;
-  }
-  if (!node) return;
-  const range = document.createRange();
-  range.setStart(node, Math.max(0, Math.min(remaining, (node.nodeValue ?? "").length)));
-  range.collapse(true);
-  const sel = window.getSelection();
-  sel?.removeAllRanges();
-  sel?.addRange(range);
-}
-
-interface MdShortcut {
-  re: RegExp;
-  markerLen: number;
-  cmd: string;
-  payload?: unknown;
-}
-
-/** 行首 Markdown 标记 → 编辑器命令 */
-const MD_SHORTCUTS: MdShortcut[] = [
-  { re: /^(#{1,6})\s+/, markerLen: 0, cmd: "heading" }, // 长度动态，见下方
-  { re: /^(-|\*)\s+/, markerLen: 2, cmd: "ul" },
-  { re: /^\d+[.)]\s+/, markerLen: 0, cmd: "ol" }, // 动态
-  { re: /^- \[[ xX]\]\s+/, markerLen: 0, cmd: "task" }, // 动态
-  { re: /^>\s+/, markerLen: 2, cmd: "quote" },
-  { re: /^(---|\*\*\*|___)\s*$/, markerLen: 0, cmd: "hr" }, // 动态
-];
-
-/** WYSIWYG 容器 input 监听：识别行首标记并转换 */
-function attachMarkdownShortcuts(ww: HTMLElement, editor: Editor): void {
-  // 挂载标志（调试/测试用）
-  (window as unknown as { __mdShortcutAttached?: boolean }).__mdShortcutAttached =
-    true;
-  let composing = false;
-  ww.addEventListener("compositionstart", () => {
-    composing = true;
-  });
-  ww.addEventListener("compositionend", () => {
-    composing = false;
-  });
-  ww.addEventListener("input", () => {
-    if (composing) return;
-    // 延迟到 toastui 处理完当前输入后再转换
-    window.setTimeout(() => {
-      try {
-        const sel = window.getSelection();
-        if (!sel || !sel.rangeCount) return;
-        const anchor = sel.anchorNode;
-        const block =
-          anchor && anchor.nodeType === Node.TEXT_NODE
-            ? (anchor.parentElement as HTMLElement | null)
-            : (anchor as HTMLElement | null);
-        if (!block || !ww.contains(block)) return;
-        // 仅在普通段落/块中转换（标题、列表项、引用内不处理）
-        const tag = block.tagName;
-        if (tag !== "P" && tag !== "DIV") return;
-        const line = block.textContent ?? "";
-        let hit: MdShortcut | null = null;
-        let markerLen = 0;
-        for (const s of MD_SHORTCUTS) {
-          const m = line.match(s.re);
-          if (!m) continue;
-          hit = s;
-          if (s.cmd === "heading") {
-            markerLen = m[1].length + 1;
-          } else if (s.cmd === "ol") {
-            markerLen = m[0].length;
-          } else if (s.cmd === "task") {
-            markerLen = m[0].length;
-          } else if (s.cmd === "hr") {
-            markerLen = line.length;
-          } else {
-            markerLen = s.markerLen;
-          }
-          break;
-        }
-        if (!hit) return;
-        const caretBefore = caretOffsetIn(block);
-        stripTextNodes(block, markerLen);
-        setCaretByOffset(block, Math.max(0, caretBefore - markerLen));
-        const payload =
-          hit.cmd === "heading" ? { level: (line.match(/^(#{1,6})\s+/) as RegExpMatchArray)[1].length } : hit.payload;
-        editor.exec(hit.cmd, payload);
-      } catch {
-        /* 转换失败时保持原文，不干扰输入 */
-      }
-    }, 0);
+/** 图片 → data URL（图片内嵌进正文，随笔记一起保存/导出） */
+function fileToDataURL(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast("图片超过 8MB，未插入", "error");
+      resolve("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => {
+      toast("图片读取失败", "error");
+      resolve("");
+    };
+    reader.readAsDataURL(file);
   });
 }
 
+/**
+ * Milkdown Crepe：真正的 Markdown 所见即所得编辑器。
+ *
+ * 输入即解析——`# ` 出标题、`- ` 出列表、`- [ ]` 出任务、
+ * `> ` 出引用、` ``` ` 出代码块、`$…$` / `$$…$$` 出公式，
+ * 全部由 ProseMirror 输入规则原生完成（含中文输入法组合提交），
+ * 不再需要任何 DOM 补丁。
+ */
 export default function EditorPane({
   note,
-  ready,
   registerApi,
   onHeadingChange,
+  theme,
 }: Props) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<Editor | null>(null);
+  const hostRef = useRef<HTMLDivElement>(null); // Crepe 挂载点
+  const scrollRef = useRef<HTMLDivElement>(null); // 滚动容器
+  const crepeRef = useRef<Crepe | null>(null);
   const apiRef = useRef<EditorApi | null>(null);
   const noteIdRef = useRef<string | null>(null);
-  const previewRef = useRef<HTMLElement | null>(null);
+  const noteRef = useRef<NoteNode | null>(note);
+  noteRef.current = note;
+  const themeRef = useRef<ThemeMode>(theme);
+  themeRef.current = theme;
   const headingIndexRef = useRef(-1);
+  const suppressNextRef = useRef(false);
+  const scrollTimerRef = useRef(0);
   const callbacksRef = useRef({ onHeadingChange });
   callbacksRef.current = { onHeadingChange };
   const dispatch = useAppDispatch();
 
-  /* ---------- 创建编辑器（一次） ---------- */
+  /** 代码块 CodeMirror 扩展（随主题切换 oneDark 深色编辑器） */
+  const cmExtensions = (dark: boolean) => [
+    keymap.of(defaultKeymap.concat(indentWithTab)),
+    basicSetup,
+    ...(dark ? [oneDark] : []),
+  ];
+
+  /* ---------- 滚动 → 高亮当前大纲标题 ---------- */
   useEffect(() => {
-    const host = hostRef.current;
-    if (!ready || !host || editorRef.current) return;
-
-    const editor = new Editor({
-      el: host,
-      height: "100%",
-      // 仅所见即所得（WYSIWYG）模式
-      initialEditType: "wysiwyg",
-      hideModeSwitch: true,
-      language: "zh-CN",
-      autofocus: false,
-      plugins: [[codeSyntaxHighlight, { highlighter: Prism }]],
-      toolbarItems: TOOLBAR_ITEMS,
-      addImageBlobHook: ((
-        blob: File | Blob,
-        callback: (url: string, text?: string) => void,
-      ) => {
-        if (blob.size > MAX_IMAGE_BYTES) {
-          toast("图片超过 8MB，未插入", "error");
-          callback("", "");
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => callback(String(reader.result), "");
-        reader.onerror = () => {
-          toast("图片读取失败", "error");
-          callback("", "");
-        };
-        reader.readAsDataURL(blob);
-      }) as AddImageBlobHook,
-    });
-    editorRef.current = editor;
-    // 调试/测试用：暴露编辑器实例（生产无害）
-    (window as unknown as { __piEditor?: Editor }).__piEditor = editor;
-
-    // 创建后立即加载当前笔记内容（若 init 已完成；否则由切换笔记 effect 加载）
-    if (note) {
-      noteIdRef.current = note.id;
-      editor.setMarkdown(note.content, false);
-    }
-
-    // WYSIWYG 模式：可视容器为 wwEditor（toastui 3.x 的 getEditorElements 键名）
-    const preview = editor.getEditorElements().wwEditor;
-    previewRef.current = preview ?? null;
-    const containers = [preview].filter(Boolean) as HTMLElement[];
-
-    // Typora 风格：输入 # / - / > 等 Markdown 标记自动转换
-    if (preview) attachMarkdownShortcuts(preview, editor);
-
-    /* KaTeX：预览 DOM 变化后处理公式 */
-    let katexTimer = 0;
-    const scheduleKatex = () => {
-      window.clearTimeout(katexTimer);
-      katexTimer = window.setTimeout(() => {
-        for (const c of containers) {
-          if (c.isConnected) processKatex(c);
-        }
-      }, 120);
-    };
-    const observer = new MutationObserver(scheduleKatex);
-    for (const c of containers) {
-      observer.observe(c, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
-    scheduleKatex();
-
-    /* 滚动 → 高亮当前大纲标题 */
-    let scrollTimer = 0;
-    const onScroll = () => {
-      window.clearTimeout(scrollTimer);
-      scrollTimer = window.setTimeout(() => {
-        const container = previewRef.current;
-        if (!container || !container.isConnected) return;
+    const handleScroll = () => {
+      window.clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = window.setTimeout(() => {
+        const scroller = scrollRef.current;
+        if (!scroller) return;
         const headings = Array.from(
-          container.querySelectorAll("h1,h2,h3,h4,h5"),
+          scroller.querySelectorAll("h1,h2,h3,h4,h5"),
         ) as HTMLElement[];
         let idx = -1;
-        const top = container.scrollTop + 10;
+        const top = scroller.getBoundingClientRect().top + 80;
         for (let i = 0; i < headings.length; i++) {
-          if (headings[i].offsetTop <= top) idx = i;
+          if (headings[i].getBoundingClientRect().top <= top) idx = i;
           else break;
         }
         if (idx !== headingIndexRef.current) {
@@ -290,62 +108,200 @@ export default function EditorPane({
         }
       }, 80);
     };
-    for (const c of containers) {
-      c.addEventListener("scroll", onScroll, { passive: true });
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      window.clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
 
-    editor.on("change", () => {
-      const id = noteIdRef.current;
-      if (id) dispatch({ type: "setContent", id, content: editor.getMarkdown() });
-      scheduleKatex();
+  /* ---------- 创建编辑器（一次） ---------- */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || crepeRef.current) return;
+    let cancelled = false;
+
+    const crepe = new Crepe({
+      root: host,
+      defaultValue: "",
+      // 注意：CodeMirror 必须保持启用——Crepe 的 LaTeX 公式功能硬性依赖它
+      // （latex feature 在未启用 CodeMirror 时直接抛错，编辑器将无法初始化）。
+      featureConfigs: {
+        [Crepe.Feature.CodeMirror]: {
+          theme: themeRef.current === "dark" ? oneDark : undefined,
+          // 代码块默认显示渲染结果（预览即所得）：LaTeX 块直接显示 KaTeX 公式、
+          // 普通代码块显示 Prism 高亮结果；点工具条按钮切换到编辑。
+          previewOnlyByDefault: true,
+          // 普通代码块预览：Prism（refractor）高亮；latex 由 latex feature 接管为 KaTeX
+          renderPreview: (language, content) =>
+            highlightCodeHtml(language, content),
+          copyText: "复制",
+          searchPlaceholder: "搜索语言…",
+          noResultText: "无匹配语言",
+          previewToggleText: (previewOnlyMode) =>
+            previewOnlyMode ? "编辑" : "隐藏",
+          previewLabel: "预览",
+        },
+        [Crepe.Feature.Placeholder]: {
+          text: "开始写作…（# 空格 建标题，/ 唤起菜单，$…$ 行内公式）",
+          mode: "doc",
+        },
+        [Crepe.Feature.ImageBlock]: {
+          onUpload: fileToDataURL,
+          proxyDomURL: (url) => url,
+        },
+        [Crepe.Feature.LinkTooltip]: {
+          inputPlaceholder: "输入链接地址…",
+        },
+        [Crepe.Feature.Latex]: {
+          katexOptions: { throwOnError: false },
+        },
+        // 斜杠菜单与块菜单中文化
+        [Crepe.Feature.BlockEdit]: {
+          textGroup: {
+            label: "文本",
+            text: { label: "正文" },
+            h1: { label: "标题 1" },
+            h2: { label: "标题 2" },
+            h3: { label: "标题 3" },
+            h4: { label: "标题 4" },
+            h5: { label: "标题 5" },
+            h6: { label: "标题 6" },
+            quote: { label: "引用" },
+            divider: { label: "分割线" },
+          },
+          listGroup: {
+            label: "列表",
+            bulletList: { label: "无序列表" },
+            orderedList: { label: "有序列表" },
+            taskList: { label: "任务列表" },
+          },
+          advancedGroup: {
+            label: "高级",
+            image: { label: "图片" },
+            codeBlock: { label: "代码块" },
+            table: { label: "表格" },
+            math: { label: "公式" },
+          },
+        },
+      },
+    });
+    crepeRef.current = crepe;
+
+    // Prism 语法高亮：注册全部 refractor 语言（297 种，随包离线）
+    crepe.editor.config((ctx) => {
+      ctx.update(prismConfig.key, (prev) => ({
+        ...prev,
+        configureRefractor: (refractor) =>
+          registerRefractorLanguages(refractor),
+      }));
+    });
+    crepe.editor.use(prism);
+
+    // 内容变更 → 回写 store（笔记切换由 loadNote 抑制）
+    crepe.on((listener) => {
+      listener.markdownUpdated((_ctx, markdown) => {
+        if (suppressNextRef.current) {
+          suppressNextRef.current = false;
+          return;
+        }
+        const id = noteIdRef.current;
+        if (id) dispatch({ type: "setContent", id, content: markdown });
+      });
     });
 
+    /* 切换/加载笔记内容（编辑器创建完成后方可调用） */
+    const loadNote = (target: NoteNode | null) => {
+      const current = crepeRef.current;
+      if (!current || current.editor.status !== EditorStatus.Created) return;
+      noteIdRef.current = target?.id ?? null;
+      headingIndexRef.current = -1;
+      callbacksRef.current.onHeadingChange(-1);
+      suppressNextRef.current = true;
+      current.editor.action(replaceAll(target?.content ?? ""));
+      suppressNextRef.current = false;
+      scrollRef.current?.scrollTo({ top: 0 });
+    };
+
     const api: EditorApi = {
-      getMarkdown: () => editor.getMarkdown(),
-      getHtml: () => editor.getHTML(),
-      scrollToHeading: (index) => {
-        const container = previewRef.current;
-        if (!container || !container.isConnected) return;
-        const headings = Array.from(
-          container.querySelectorAll("h1,h2,h3,h4,h5"),
-        ) as HTMLElement[];
-        const target = headings[index];
-        if (target) {
-          container.scrollTo({ top: target.offsetTop - 8, behavior: "smooth" });
+      getMarkdown: () => crepeRef.current?.getMarkdown() ?? "",
+      getHtmlFromMarkdown: (markdown: string) => {
+        const current = crepeRef.current;
+        if (!current || current.editor.status !== EditorStatus.Created) {
+          return "";
         }
+        return current.editor.action((ctx) => {
+          const doc = ctx.get(parserCtx)(markdown);
+          const div = document.createElement("div");
+          const fragment = DOMSerializer.fromSchema(ctx.get(schemaCtx))
+            .serializeFragment(doc.content);
+          div.appendChild(fragment);
+          return div.innerHTML;
+        });
+      },
+      scrollToHeading: (index) => {
+        const scroller = scrollRef.current;
+        if (!scroller) return;
+        const headings = Array.from(
+          scroller.querySelectorAll("h1,h2,h3,h4,h5"),
+        ) as HTMLElement[];
+        headings[index]?.scrollIntoView({ block: "start", behavior: "smooth" });
       },
     };
     apiRef.current = api;
-    registerApi(api);
+
+    crepe
+      .create()
+      .then(() => {
+        if (cancelled) return;
+        registerApi(api);
+        loadNote(noteRef.current);
+      })
+      .catch((err: unknown) => {
+        toast(
+          `编辑器初始化失败：${(err as Error)?.message ?? String(err)}`,
+          "error",
+        );
+      });
 
     return () => {
-      window.clearTimeout(katexTimer);
-      window.clearTimeout(scrollTimer);
-      observer.disconnect();
-      for (const c of containers) c.removeEventListener("scroll", onScroll);
+      cancelled = true;
       registerApi(null);
       apiRef.current = null;
-      previewRef.current = null;
-      editorRef.current = null;
-      editor.destroy();
+      const current = crepeRef.current;
+      crepeRef.current = null;
+      void current?.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, []);
+
+  /* ---------- 主题切换 → 更新代码块 CodeMirror 扩展（新初始化的块生效） ---------- */
+  useEffect(() => {
+    const current = crepeRef.current;
+    if (!current || current.editor.status !== EditorStatus.Created) return;
+    current.editor.action((ctx) => {
+      const prev = ctx.get(codeBlockConfig.key);
+      ctx.set(codeBlockConfig.key, {
+        ...prev,
+        extensions: cmExtensions(theme === "dark"),
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
 
   /* ---------- 切换笔记 ---------- */
   useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
+    const current = crepeRef.current;
+    if (!current || current.editor.status !== EditorStatus.Created) return;
     noteIdRef.current = note?.id ?? null;
     headingIndexRef.current = -1;
     callbacksRef.current.onHeadingChange(-1);
-    editor.setMarkdown(note?.content ?? "", false);
-    const container = previewRef.current;
-    if (container) container.scrollTop = 0;
-    const t = window.setTimeout(() => {
-      if (previewRef.current) processKatex(previewRef.current);
-    }, 160);
-    return () => window.clearTimeout(t);
+    suppressNextRef.current = true;
+    current.editor.action(replaceAll(note?.content ?? ""));
+    suppressNextRef.current = false;
+    scrollRef.current?.scrollTo({ top: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note?.id]);
 
@@ -362,8 +318,10 @@ export default function EditorPane({
           className="min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint disabled:cursor-default"
         />
       </div>
-      {/* 宿主 div 常驻：编辑器创建与笔记切换不受 activeNote 空/非空影响 */}
-      <div ref={hostRef} className="toastui-editor-dark min-h-0 flex-1" />
+      {/* 滚动容器常驻；Crepe 挂载点随笔记切换保持稳定 */}
+      <div ref={scrollRef} className="pi-md-scroll min-h-0 flex-1 overflow-y-auto">
+        <div ref={hostRef} className="h-full" />
+      </div>
       {!note && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg text-muted">
           <svg
@@ -379,7 +337,7 @@ export default function EditorPane({
           <p className="text-sm">从左侧选择一篇笔记，或新建一篇开始写作</p>
           <button
             onClick={() => dispatch({ type: "newNote", parentId: null })}
-            className="bg-accent px-4 py-2 text-xs text-black hover:bg-accent2"
+            className="bg-accent px-4 py-2 text-xs text-onaccent hover:bg-accent2"
           >
             新建笔记
           </button>

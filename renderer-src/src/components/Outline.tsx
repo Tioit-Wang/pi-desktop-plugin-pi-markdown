@@ -34,7 +34,7 @@ export default function Outline({ items, activeIndex, onNavigate }: Props) {
           onClick={() => onNavigate(i)}
           className={`flex items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors ${
             activeIndex === i
-              ? "bg-accent font-medium text-black"
+              ? "bg-accent font-medium text-onaccent"
               : "text-muted hover:bg-panel2 hover:text-ink"
           }`}
           style={{ paddingLeft: `${(item.level - 1) * 14 + 8}px` }}

@@ -95,7 +95,7 @@ export default function Sidebar({
             onClick={() => onTab(t.key)}
             className={`px-3 py-1 text-xs transition-colors ${
               tab === t.key
-                ? "bg-accent font-medium text-black"
+                ? "bg-accent font-medium text-onaccent"
                 : "text-muted hover:bg-panel2 hover:text-ink"
             }`}
           >
@@ -181,7 +181,7 @@ export default function Sidebar({
         <div className="flex gap-2 border-t border-edge p-2">
           <button
             onClick={() => onNewNote(null)}
-            className="flex flex-1 items-center justify-center gap-1.5 bg-accent py-1.5 text-xs text-black transition-colors hover:bg-accent2"
+            className="flex flex-1 items-center justify-center gap-1.5 bg-accent py-1.5 text-xs text-onaccent transition-colors hover:bg-accent2"
           >
             <svg
               viewBox="0 0 24 24"

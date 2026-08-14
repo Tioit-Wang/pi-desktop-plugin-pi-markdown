@@ -11,6 +11,7 @@ import type {
   FolderNode,
   NoteNode,
   SideTab,
+  ThemeMode,
   TreeNode,
 } from "./types";
 import {
@@ -29,6 +30,7 @@ export type Action =
       tree: TreeNode[];
       activeId: string | null;
       dataDir: string | null;
+      theme: ThemeMode;
     }
   | { type: "newNote"; parentId: string | null; title?: string; content?: string }
   | { type: "newFolder"; parentId: string | null; name?: string }
@@ -39,6 +41,7 @@ export type Action =
   | { type: "toggleExpanded"; id: string }
   | { type: "setTab"; tab: SideTab }
   | { type: "setQuery"; q: string }
+  | { type: "setTheme"; theme: ThemeMode }
   | { type: "setContent"; id: string; content: string }
   | {
       type: "setSave";
@@ -55,6 +58,7 @@ const initialState: AppState = {
   query: "",
   saveState: { status: "saved", at: null },
   dataDir: null,
+  theme: "light",
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -65,6 +69,7 @@ function reducer(state: AppState, action: Action): AppState {
         tree: action.tree,
         activeId: action.activeId,
         dataDir: action.dataDir,
+        theme: action.theme,
         expanded: {},
       };
 
@@ -151,6 +156,9 @@ function reducer(state: AppState, action: Action): AppState {
 
     case "setQuery":
       return { ...state, query: action.q };
+
+    case "setTheme":
+      return { ...state, theme: action.theme };
 
     case "setContent":
       return {

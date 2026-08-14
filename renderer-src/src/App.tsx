@@ -10,7 +10,6 @@ import {
   searchTree,
 } from "./lib/tree";
 import { fetchDataDir, loadInitial, persistToHost } from "./bridge";
-import { loadPrismLanguages } from "./lib/prism";
 import { exportNote } from "./lib/exporters";
 import { toast, ToastHost } from "./lib/toast";
 import { WELCOME_MD } from "./welcome";
@@ -23,21 +22,10 @@ import Modal, { type ModalState } from "./components/Modal";
 function AppInner() {
   const state = useAppState();
   const dispatch = useAppDispatch();
-  const [ready, setReady] = useState(false);
   const [activeHeading, setActiveHeading] = useState(-1);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
   const editorApiRef = useRef<EditorApi | null>(null);
-
-  /* 加载 Prism 全部语言（168+） */
-  useEffect(() => {
-    loadPrismLanguages()
-      .then(() => setReady(true))
-      .catch((err) => {
-        console.warn("[pi-markdown] prism load failed", err);
-        setReady(true);
-      });
-  }, []);
 
   /* 初始化：读取权威数据（settings.json 或 localStorage） */
   useEffect(() => {
@@ -50,6 +38,7 @@ function AppInner() {
         tree: initial.tree,
         activeId: initial.activeId,
         dataDir: dir ?? initial.dataDir,
+        theme: initial.theme,
       });
       if (initial.tree.length === 0) {
         dispatch({
@@ -65,7 +54,12 @@ function AppInner() {
     };
   }, []);
 
-  /* 自动保存：任何树/活动笔记变化 → 防抖 800ms 同步到主进程 */
+  /* 主题：应用到根元素（米白/黑夜），并随切换即时更新 */
+  useEffect(() => {
+    document.documentElement.dataset.theme = state.theme;
+  }, [state.theme]);
+
+  /* 自动保存：任何树/活动笔记/主题变化 → 防抖 800ms 同步到主进程 */
   const stateRef = useRef(state);
   stateRef.current = state;
   const skipFirst = useRef(true);
@@ -78,10 +72,10 @@ function AppInner() {
     }
     if (syncTimer.current) window.clearTimeout(syncTimer.current);
     syncTimer.current = window.setTimeout(() => {
-      const { tree, activeId } = stateRef.current;
+      const { tree, activeId, theme } = stateRef.current;
       dispatch({ type: "setSave", status: "saving" });
       syncChain.current = syncChain.current
-        .then(() => persistToHost(tree, activeId))
+        .then(() => persistToHost(tree, activeId, theme))
         .then(() => {
           dispatch({ type: "setSave", status: "saved", at: Date.now() });
         })
@@ -94,7 +88,7 @@ function AppInner() {
           toast(`保存失败：${(err as Error)?.message ?? String(err)}`, "error");
         });
     }, 800);
-  }, [state.tree, state.activeId, dispatch]);
+  }, [state.tree, state.activeId, state.theme, dispatch]);
 
   const activeNote = useMemo(
     () => (state.activeId ? findNote(state.tree, state.activeId) : null),
@@ -196,12 +190,16 @@ function AppInner() {
         toast("编辑器尚未就绪", "error");
         return;
       }
-      // 确保导出的是编辑器最新内容
-      if (note.id === activeNote?.id) {
-        dispatch({ type: "setContent", id: note.id, content: api.getMarkdown() });
-      }
+      // 导出内容：活动笔记取编辑器最新内容，其余取树中已保存内容
+      const markdown =
+        note.id === activeNote?.id ? api.getMarkdown() : note.content;
       try {
-        const result = exportNote(kind, note, () => api.getHtml());
+        const result = exportNote(
+          kind,
+          note,
+          () => markdown,
+          (md) => api.getHtmlFromMarkdown(md),
+        );
         if (result) {
           result
             .then(() =>
@@ -294,9 +292,9 @@ function AppInner() {
         />
         <EditorPane
           note={activeNote}
-          ready={ready}
           registerApi={registerApi}
           onHeadingChange={setActiveHeading}
+          theme={state.theme}
         />
       </div>
       <StatusBar
@@ -305,6 +303,13 @@ function AppInner() {
         noteCount={noteTotal}
         activeTitle={activeNote?.title ?? null}
         wordCount={activeNote?.content.length ?? 0}
+        theme={state.theme}
+        onToggleTheme={() =>
+          dispatch({
+            type: "setTheme",
+            theme: state.theme === "dark" ? "light" : "dark",
+          })
+        }
       />
       <ContextMenu menu={menu} onClose={() => setMenu(null)} />
       <Modal modal={modal} onClose={() => setModal(null)} onSubmit={handleModalSubmit} />

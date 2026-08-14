@@ -5,7 +5,7 @@
  * 命令 id: pi-markdown.open
  *
  * 数据模型（与面板共享）：
- *   settings.json = { tree: TreeNode[], activeNoteId: string|null, updatedAt: <ms> }
+ *   settings.json = { tree: TreeNode[], activeNoteId: string|null, theme: 'light'|'dark', updatedAt: <ms> }
  *   TreeNode = { id, type:'folder', name, children[] } | { id, type:'note', title, content, updatedAt }
  *
  * 权威数据源 = 插件数据目录 settings.json（pi.plugin.getSettings/setSettings）。
@@ -92,22 +92,24 @@ async function onPanelInvoke(channel, payload) {
   if (name === "note.sync") {
     const tree = payload?.tree;
     const activeId = payload?.activeId ?? null;
+    const theme = payload?.theme === "dark" ? "dark" : "light";
     if (!validateTree(tree)) {
       const err = new Error("数据校验失败：笔记树结构不合法");
       err.code = "INVALID_ARGUMENT";
       throw err;
     }
-    const json = JSON.stringify({ tree, activeNoteId: activeId });
+    const json = JSON.stringify({ tree, activeNoteId: activeId, theme });
     if (json.length > MAX_TREE_BYTES) {
       const err = new Error("数据过大（超过 20MB），本次保存被拒绝");
       err.code = "PAYLOAD_TOO_LARGE";
       throw err;
     }
-    const snapshot = { tree, activeNoteId: activeId, bytes: json.length };
+    const snapshot = { tree, activeNoteId: activeId, theme, bytes: json.length };
     writeChain = writeChain.then(async () => {
       await pi.plugin.setSettings({
         tree: snapshot.tree,
         activeNoteId: snapshot.activeNoteId,
+        theme: snapshot.theme,
         updatedAt: Date.now(),
       });
     });
