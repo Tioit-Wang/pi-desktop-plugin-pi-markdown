@@ -17,8 +17,6 @@ export type TreeNode = FolderNode | NoteNode;
 
 export type DropPos = "before" | "inside" | "after";
 
-export type ViewMode = "split" | "write" | "preview";
-
 export type SideTab = "notes" | "outline";
 
 export type SaveStatus = "saved" | "saving" | "error";
@@ -45,7 +43,6 @@ export interface AppState {
   tree: TreeNode[];
   activeId: string | null;
   expanded: Record<string, boolean>;
-  viewMode: ViewMode;
   tab: SideTab;
   query: string;
   saveState: SaveState;

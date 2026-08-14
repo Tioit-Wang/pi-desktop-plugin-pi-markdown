@@ -12,7 +12,6 @@ import type {
   NoteNode,
   SideTab,
   TreeNode,
-  ViewMode,
 } from "./types";
 import {
   findNode,
@@ -38,7 +37,6 @@ export type Action =
   | { type: "move"; id: string; targetId: string; pos: DropPos }
   | { type: "setActive"; id: string | null }
   | { type: "toggleExpanded"; id: string }
-  | { type: "setViewMode"; mode: ViewMode }
   | { type: "setTab"; tab: SideTab }
   | { type: "setQuery"; q: string }
   | { type: "setContent"; id: string; content: string }
@@ -53,7 +51,6 @@ const initialState: AppState = {
   tree: [],
   activeId: null,
   expanded: {},
-  viewMode: "split",
   tab: "notes",
   query: "",
   saveState: { status: "saved", at: null },
@@ -148,9 +145,6 @@ function reducer(state: AppState, action: Action): AppState {
           [action.id]: !state.expanded[action.id],
         },
       };
-
-    case "setViewMode":
-      return { ...state, viewMode: action.mode };
 
     case "setTab":
       return { ...state, tab: action.tab };

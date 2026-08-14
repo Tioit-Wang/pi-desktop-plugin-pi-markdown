@@ -82,6 +82,14 @@ body {
   overflow-y: hidden;
 }
 
+/* ---------- 工具栏与图片缩小三分之一（zoom 等比缩放） ---------- */
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
+  zoom: 0.667;
+}
+.toastui-editor-contents img {
+  zoom: 0.667;
+}
+
 /* 代码块语言标签 */
 .toastui-editor-contents pre code::after {
   content: attr(data-language);

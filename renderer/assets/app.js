@@ -53392,7 +53392,7 @@
   });
 
   // src/App.tsx
-  var import_react7 = __toESM(require_react(), 1);
+  var import_react6 = __toESM(require_react(), 1);
 
   // src/store.tsx
   var import_react = __toESM(require_react(), 1);
@@ -53545,7 +53545,6 @@
     tree: [],
     activeId: null,
     expanded: {},
-    viewMode: "split",
     tab: "notes",
     query: "",
     saveState: { status: "saved", at: null },
@@ -53617,8 +53616,6 @@
             [action.id]: !state.expanded[action.id]
           }
         };
-      case "setViewMode":
-        return { ...state, viewMode: action.mode };
       case "setTab":
         return { ...state, tab: action.tab };
       case "setQuery":
@@ -87704,210 +87701,11 @@ def fib(n: int) -> int:
 > \u62D6\u62FD\u5373\u53EF\u8C03\u6574\u5B83\u4EEC\u7684\u4F4D\u7F6E\u3002\u6240\u6709\u6570\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A\u3002
 `;
 
-  // src/components/TopBar.tsx
+  // src/components/NoteTree.tsx
   var import_react3 = __toESM(require_react(), 1);
   var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-  var VIEW_MODES = [
-    { key: "split", label: "\u5206\u5C4F", icon: "M4 5h16v14H4zM9 5v14" },
-    { key: "write", label: "\u7F16\u8F91", icon: "M12 5v14M5 12h14" },
-    {
-      key: "preview",
-      label: "\u9884\u89C8",
-      icon: "M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
-    }
-  ];
-  function SaveBadge({ saveState }) {
-    if (saveState.status === "saving") {
-      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "flex items-center gap-1.5 text-xs text-faint", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "inline-block h-3 w-3 animate-spin border border-faint border-t-ink" }),
-        "\u4FDD\u5B58\u4E2D\u2026"
-      ] });
-    }
-    if (saveState.status === "error") {
-      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "text-xs text-danger", children: [
-        "\u4FDD\u5B58\u5931\u8D25",
-        saveState.message ? `\uFF1A${saveState.message}` : ""
-      ] });
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "flex items-center gap-1 text-xs text-faint", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        "svg",
-        {
-          viewBox: "0 0 24 24",
-          className: "h-3.5 w-3.5",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: "2.4",
-          children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M20 6L9 17l-5-5" })
-        }
-      ),
-      saveState.at ? `\u5DF2\u4FDD\u5B58 ${new Date(saveState.at).toLocaleTimeString("zh-CN", {
-        hour12: false
-      })}` : "\u5DF2\u4FDD\u5B58"
-    ] });
-  }
-  function TopBar({
-    viewMode,
-    onViewMode,
-    onExport,
-    saveState,
-    noteCount,
-    activeTitle,
-    canExport
-  }) {
-    const [exportOpen, setExportOpen] = (0, import_react3.useState)(false);
-    const exportRef = (0, import_react3.useRef)(null);
-    (0, import_react3.useEffect)(() => {
-      if (!exportOpen) return;
-      const close3 = (e) => {
-        if (!exportRef.current?.contains(e.target)) setExportOpen(false);
-      };
-      const esc = (e) => {
-        if (e.key === "Escape") setExportOpen(false);
-      };
-      document.addEventListener("mousedown", close3);
-      document.addEventListener("keydown", esc);
-      return () => {
-        document.removeEventListener("mousedown", close3);
-        document.removeEventListener("keydown", esc);
-      };
-    }, [exportOpen]);
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("header", { className: "flex h-12 shrink-0 items-center gap-3 border-b border-edge bg-panel px-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-          "svg",
-          {
-            viewBox: "0 0 24 24",
-            className: "h-5 w-5 text-ink",
-            fill: "none",
-            stroke: "currentColor",
-            strokeWidth: "1.8",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3v5h5M9 13h6M9 17h6" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-sm font-semibold tracking-wide text-ink", children: "Pi Markdown" }),
-        activeTitle && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-faint", children: "/" }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "max-w-[220px] truncate text-xs text-muted", children: activeTitle })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ml-6 flex items-center border border-edge bg-bg", children: VIEW_MODES.map((v) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-        "button",
-        {
-          title: v.label,
-          onClick: () => onViewMode(v.key),
-          className: `flex items-center gap-1.5 px-3 py-1 text-xs transition-colors ${viewMode === v.key ? "bg-accent text-black" : "text-muted hover:bg-panel2 hover:text-ink"}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-              "svg",
-              {
-                viewBox: "0 0 24 24",
-                className: "h-3.5 w-3.5",
-                fill: "none",
-                stroke: "currentColor",
-                strokeWidth: "1.8",
-                children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: v.icon })
-              }
-            ),
-            v.label
-          ]
-        },
-        v.key
-      )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ml-auto flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "hidden text-xs text-faint lg:inline", children: [
-          noteCount,
-          " \u7BC7\u7B14\u8BB0"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { ref: exportRef, className: "relative", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-            "button",
-            {
-              disabled: !canExport,
-              onClick: () => setExportOpen((o) => !o),
-              className: "flex items-center gap-1.5 border border-edge2 bg-panel2 px-3 py-1.5 text-xs text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40",
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                  "svg",
-                  {
-                    viewBox: "0 0 24 24",
-                    className: "h-3.5 w-3.5",
-                    fill: "none",
-                    stroke: "currentColor",
-                    strokeWidth: "1.8",
-                    children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" })
-                  }
-                ),
-                "\u5BFC\u51FA",
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                  "svg",
-                  {
-                    viewBox: "0 0 24 24",
-                    className: "h-3 w-3",
-                    fill: "none",
-                    stroke: "currentColor",
-                    strokeWidth: "2",
-                    children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M6 9l6 6 6-6" })
-                  }
-                )
-              ]
-            }
-          ),
-          exportOpen && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "absolute right-0 top-full z-50 mt-1.5 w-44 border border-edge2 bg-panel2 py-1", children: [
-            {
-              kind: "md",
-              label: "Markdown \u6587\u4EF6 (.md)",
-              icon: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"
-            },
-            {
-              kind: "html",
-              label: "HTML \u6587\u4EF6 (.html)",
-              icon: "M8 9l-3 3 3 3M16 9l3 3-3 3M13 6l-2 12"
-            },
-            {
-              kind: "png",
-              label: "\u56FE\u50CF\u6587\u4EF6 (.png)",
-              icon: "M3 5h18v14H3zM3 15l5-5 4 4 4-4 5 5"
-            }
-          ].map((item2) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-            "button",
-            {
-              className: "flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs text-ink hover:bg-panel",
-              onClick: () => {
-                setExportOpen(false);
-                onExport(item2.kind);
-              },
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                  "svg",
-                  {
-                    viewBox: "0 0 24 24",
-                    className: "h-3.5 w-3.5 text-muted",
-                    fill: "none",
-                    stroke: "currentColor",
-                    strokeWidth: "1.8",
-                    children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: item2.icon })
-                  }
-                ),
-                item2.label
-              ]
-            },
-            item2.kind
-          )) })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SaveBadge, { saveState })
-      ] })
-    ] });
-  }
-
-  // src/components/NoteTree.tsx
-  var import_react4 = __toESM(require_react(), 1);
-  var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
   function FolderIcon({ open: open2 }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       "svg",
       {
         viewBox: "0 0 24 24",
@@ -87915,12 +87713,12 @@ def fib(n: int) -> int:
         fill: "none",
         stroke: "currentColor",
         strokeWidth: "1.6",
-        children: open2 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" })
+        children: open2 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" })
       }
     );
   }
   function NoteIcon({ active }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
       "svg",
       {
         viewBox: "0 0 24 24",
@@ -87929,8 +87727,8 @@ def fib(n: int) -> int:
         stroke: "currentColor",
         strokeWidth: "1.6",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M14 3v5h5M9 13h6M9 17h6" })
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3v5h5M9 13h6M9 17h6" })
         ]
       }
     );
@@ -87945,10 +87743,10 @@ def fib(n: int) -> int:
     onContext,
     onMove
   }) {
-    const [dragOver, setDragOver] = (0, import_react4.useState)(null);
-    const dragIdRef = (0, import_react4.useRef)(null);
+    const [dragOver, setDragOver] = (0, import_react3.useState)(null);
+    const dragIdRef = (0, import_react3.useRef)(null);
     const isFolder = node.type === "folder";
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
       "div",
       {
         draggable: true,
@@ -87990,15 +87788,15 @@ def fib(n: int) -> int:
         onContextMenu: onContext,
         title: isFolder ? node.name : node.title,
         children: [
-          dragOver?.id === node.id && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          dragOver?.id === node.id && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
             "span",
             {
               className: `pointer-events-none absolute left-1 right-1 h-0.5 bg-ink ${dragOver.pos === "before" ? "top-0" : dragOver.pos === "after" ? "bottom-0" : ""}`
             }
           ),
-          dragOver?.id === node.id && dragOver.pos === "inside" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "pointer-events-none absolute inset-0 border border-ink/70 bg-panel2" }),
-          isFolder ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          dragOver?.id === node.id && dragOver.pos === "inside" && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "pointer-events-none absolute inset-0 border border-ink/70 bg-panel2" }),
+          isFolder ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
               "svg",
               {
                 viewBox: "0 0 24 24",
@@ -88006,27 +87804,27 @@ def fib(n: int) -> int:
                 fill: "none",
                 stroke: "currentColor",
                 strokeWidth: "2.4",
-                children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M9 6l6 6-6 6" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M9 6l6 6-6 6" })
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FolderIcon, { open: expanded }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "truncate font-medium", children: node.name })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "w-3 shrink-0" }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(NoteIcon, { active }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "truncate", children: node.title || "\u672A\u547D\u540D\u7B14\u8BB0" })
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FolderIcon, { open: expanded }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "truncate font-medium", children: node.name })
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "w-3 shrink-0" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(NoteIcon, { active }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "truncate", children: node.title || "\u672A\u547D\u540D\u7B14\u8BB0" })
           ] }),
-          isFolder && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "ml-auto shrink-0 text-[10px] text-faint opacity-0 transition-opacity group-hover:opacity-100", children: node.children.length })
+          isFolder && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "ml-auto shrink-0 text-[10px] text-faint opacity-0 transition-opacity group-hover:opacity-100", children: node.children.length })
         ]
       }
     );
   }
   function NoteTree(props) {
     const { nodes, depth } = props;
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex flex-col gap-px", children: nodes.map((node) => {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "flex flex-col gap-px", children: nodes.map((node) => {
       const expanded = !!props.expanded[node.id];
-      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           Row,
           {
             node,
@@ -88039,7 +87837,7 @@ def fib(n: int) -> int:
             onMove: props.onMove
           }
         ),
-        node.type === "folder" && expanded && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        node.type === "folder" && expanded && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           NoteTree,
           {
             nodes: node.children,
@@ -88057,11 +87855,11 @@ def fib(n: int) -> int:
   }
 
   // src/components/Outline.tsx
-  var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
   function Outline({ items, activeIndex, onNavigate }) {
     if (items.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex flex-col items-center gap-2 px-4 py-10 text-center text-xs text-faint", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex flex-col items-center gap-2 px-4 py-10 text-center text-xs text-faint", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
           "svg",
           {
             viewBox: "0 0 24 24",
@@ -88069,25 +87867,25 @@ def fib(n: int) -> int:
             fill: "none",
             stroke: "currentColor",
             strokeWidth: "1.6",
-            children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M4 6h16M4 12h16M4 18h10" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M4 6h16M4 12h16M4 18h10" })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
           "\u5F53\u524D\u7B14\u8BB0\u6CA1\u6709\u6807\u9898",
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("br", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("br", {}),
           "\uFF08\u4F7F\u7528 # \uFF5E ##### \u6DFB\u52A0\uFF09"
         ] })
       ] });
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "flex flex-col gap-px py-1", children: items.map((item2, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex flex-col gap-px py-1", children: items.map((item2, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       "button",
       {
         onClick: () => onNavigate(i),
         className: `flex items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors ${activeIndex === i ? "bg-accent font-medium text-black" : "text-muted hover:bg-panel2 hover:text-ink"}`,
         style: { paddingLeft: `${(item2.level - 1) * 14 + 8}px` },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "shrink-0 font-mono text-[10px] text-faint", children: "#".repeat(item2.level) }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "truncate", children: item2.text })
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "shrink-0 font-mono text-[10px] text-faint", children: "#".repeat(item2.level) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "truncate", children: item2.text })
         ]
       },
       i
@@ -88095,7 +87893,7 @@ def fib(n: int) -> int:
   }
 
   // src/components/Sidebar.tsx
-  var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
   function Sidebar({
     tree,
     activeId,
@@ -88115,9 +87913,9 @@ def fib(n: int) -> int:
     onNewFolder,
     onNavigateHeading
   }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("aside", { className: "flex w-[268px] shrink-0 flex-col border-r border-edge bg-panel", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "p-3 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "relative", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("aside", { className: "flex w-[268px] shrink-0 flex-col border-r border-edge bg-panel", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "p-3 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "relative", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
           "svg",
           {
             viewBox: "0 0 24 24",
@@ -88126,12 +87924,12 @@ def fib(n: int) -> int:
             stroke: "currentColor",
             strokeWidth: "2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "11", cy: "11", r: "7" }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M21 21l-4.3-4.3" })
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "11", cy: "11", r: "7" }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M21 21l-4.3-4.3" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
           "input",
           {
             value: query,
@@ -88140,13 +87938,13 @@ def fib(n: int) -> int:
             className: "w-full border border-edge bg-bg py-1.5 pl-8 pr-3 text-xs text-ink placeholder:text-faint outline-none transition-colors focus:border-ink"
           }
         ),
-        query && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        query && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
           "button",
           {
             className: "absolute right-2 top-1/2 -translate-y-1/2 text-faint hover:text-ink",
             onClick: () => onQuery(""),
             title: "\u6E05\u7A7A",
-            children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
               "svg",
               {
                 viewBox: "0 0 24 24",
@@ -88154,16 +87952,16 @@ def fib(n: int) -> int:
                 fill: "none",
                 stroke: "currentColor",
                 strokeWidth: "2",
-                children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M6 6l12 12M18 6L6 18" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M6 6l12 12M18 6L6 18" })
               }
             )
           }
         )
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "flex gap-1 px-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "flex gap-1 px-3", children: [
         { key: "notes", label: "\u7B14\u8BB0" },
         { key: "outline", label: "\u5927\u7EB2" }
-      ].map((t) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      ].map((t) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         "button",
         {
           onClick: () => onTab(t.key),
@@ -88172,19 +87970,19 @@ def fib(n: int) -> int:
         },
         t.key
       )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "min-h-0 flex-1 overflow-y-auto px-2 py-2", children: query ? searchHits.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("p", { className: "px-3 py-8 text-center text-xs text-faint", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "min-h-0 flex-1 overflow-y-auto px-2 py-2", children: query ? searchHits.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { className: "px-3 py-8 text-center text-xs text-faint", children: [
         "\u672A\u627E\u5230\u5339\u914D\u300C",
         query,
         "\u300D\u7684\u7B14\u8BB0"
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex flex-col gap-1", children: [
-        searchHits.map((hit) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex flex-col gap-1", children: [
+        searchHits.map((hit) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
           "button",
           {
             onClick: () => onOpen(hit.node.id),
             className: "border border-transparent px-2.5 py-2 text-left transition-colors hover:border-edge2 hover:bg-panel2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-1.5", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex items-center gap-1.5", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
                   "svg",
                   {
                     viewBox: "0 0 24 24",
@@ -88193,26 +87991,26 @@ def fib(n: int) -> int:
                     stroke: "currentColor",
                     strokeWidth: "1.6",
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M14 3v5h5" })
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M14 3v5h5" })
                     ]
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "truncate text-xs font-medium text-ink", children: hit.node.title }),
-                hit.inTitle && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "shrink-0 bg-panel2 px-1 py-px text-[9px] text-ink", children: "\u6807\u9898" })
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "truncate text-xs font-medium text-ink", children: hit.node.title }),
+                hit.inTitle && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "shrink-0 bg-panel2 px-1 py-px text-[9px] text-ink", children: "\u6807\u9898" })
               ] }),
-              hit.path && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "mt-0.5 truncate text-[10px] text-faint", children: hit.path }),
-              !hit.inTitle && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "mt-1 line-clamp-2 text-[11px] leading-4 text-muted", children: hit.snippet })
+              hit.path && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "mt-0.5 truncate text-[10px] text-faint", children: hit.path }),
+              !hit.inTitle && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "mt-1 line-clamp-2 text-[11px] leading-4 text-muted", children: hit.snippet })
             ]
           },
           hit.node.id
         )),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("p", { className: "px-2 pt-1 text-center text-[10px] text-faint", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { className: "px-2 pt-1 text-center text-[10px] text-faint", children: [
           "\u5171 ",
           searchHits.length,
           " \u6761\u7ED3\u679C"
         ] })
-      ] }) : tab === "notes" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      ] }) : tab === "notes" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         NoteTree,
         {
           nodes: tree,
@@ -88224,7 +88022,7 @@ def fib(n: int) -> int:
           onContext: onContextMenu,
           onMove
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      ) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         Outline,
         {
           items: outlineItems,
@@ -88232,14 +88030,14 @@ def fib(n: int) -> int:
           onNavigate: onNavigateHeading
         }
       ) }),
-      tab === "notes" && !query && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex gap-2 border-t border-edge p-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      tab === "notes" && !query && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex gap-2 border-t border-edge p-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
           "button",
           {
             onClick: () => onNewNote(null),
             className: "flex flex-1 items-center justify-center gap-1.5 bg-accent py-1.5 text-xs text-black transition-colors hover:bg-accent2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
                 "svg",
                 {
                   viewBox: "0 0 24 24",
@@ -88247,20 +88045,20 @@ def fib(n: int) -> int:
                   fill: "none",
                   stroke: "currentColor",
                   strokeWidth: "2",
-                  children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 5v14M5 12h14" })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M12 5v14M5 12h14" })
                 }
               ),
               "\u65B0\u5EFA\u7B14\u8BB0"
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
           "button",
           {
             onClick: () => onNewFolder(null),
             className: "flex flex-1 items-center justify-center gap-1.5 border border-edge py-1.5 text-xs text-muted transition-colors hover:border-edge2 hover:text-ink",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
                 "svg",
                 {
                   viewBox: "0 0 24 24",
@@ -88269,8 +88067,8 @@ def fib(n: int) -> int:
                   stroke: "currentColor",
                   strokeWidth: "1.8",
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 11v4M10 13h4" })
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M12 11v4M10 13h4" })
                   ]
                 }
               ),
@@ -88283,7 +88081,7 @@ def fib(n: int) -> int:
   }
 
   // src/components/StatusBar.tsx
-  var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
   function StatusBar({
     saveState,
     dataDir,
@@ -88292,9 +88090,9 @@ def fib(n: int) -> int:
     wordCount
   }) {
     const time = saveState.at ? new Date(saveState.at).toLocaleTimeString("zh-CN", { hour12: false }) : "";
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("footer", { className: "flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-faint", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "flex items-center gap-1.5 truncate", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("footer", { className: "flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-faint", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "flex items-center gap-1.5 truncate", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           "svg",
           {
             viewBox: "0 0 24 24",
@@ -88302,21 +88100,21 @@ def fib(n: int) -> int:
             fill: "none",
             stroke: "currentColor",
             strokeWidth: "1.8",
-            children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M3 7h18M3 12h18M3 17h12" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M3 7h18M3 12h18M3 17h12" })
           }
         ),
         dataDir ? `\u5B58\u50A8\u4F4D\u7F6E\uFF1A${dataDir}` : "\u6D4F\u89C8\u5668\u9884\u89C8\u6A21\u5F0F\uFF08localStorage \u5B58\u50A8\uFF09"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "ml-auto flex shrink-0 items-center gap-3", children: [
-        activeTitle && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "ml-auto flex shrink-0 items-center gap-3", children: [
+        activeTitle && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
           wordCount,
           " \u5B57\u7B26"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
           noteCount,
           " \u7BC7\u7B14\u8BB0"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           "span",
           {
             className: saveState.status === "error" ? "text-danger" : saveState.status === "saving" ? "text-ink" : "",
@@ -88328,10 +88126,10 @@ def fib(n: int) -> int:
   }
 
   // src/components/EditorPane.tsx
-  var import_react5 = __toESM(require_react(), 1);
+  var import_react4 = __toESM(require_react(), 1);
   var import_editor_plugin_code_syntax_highlight = __toESM(require_toastui_editor_plugin_code_syntax_highlight(), 1);
   var import_prismjs2 = __toESM(require_prism(), 1);
-  var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
   var TOOLBAR_ITEMS = [
     ["heading", "bold", "italic", "strike"],
     ["hr", "quote"],
@@ -88343,30 +88141,29 @@ def fib(n: int) -> int:
   var MAX_IMAGE_BYTES = 8 * 1024 * 1024;
   function EditorPane({
     note,
-    viewMode,
     ready,
     registerApi,
     onHeadingChange
   }) {
-    const hostRef = (0, import_react5.useRef)(null);
-    const editorRef = (0, import_react5.useRef)(null);
-    const apiRef = (0, import_react5.useRef)(null);
-    const noteIdRef = (0, import_react5.useRef)(null);
-    const previewRef = (0, import_react5.useRef)(null);
-    const headingIndexRef = (0, import_react5.useRef)(-1);
-    const callbacksRef = (0, import_react5.useRef)({ onHeadingChange });
+    const hostRef = (0, import_react4.useRef)(null);
+    const editorRef = (0, import_react4.useRef)(null);
+    const apiRef = (0, import_react4.useRef)(null);
+    const noteIdRef = (0, import_react4.useRef)(null);
+    const previewRef = (0, import_react4.useRef)(null);
+    const headingIndexRef = (0, import_react4.useRef)(-1);
+    const callbacksRef = (0, import_react4.useRef)({ onHeadingChange });
     callbacksRef.current = { onHeadingChange };
     const dispatch = useAppDispatch();
-    (0, import_react5.useEffect)(() => {
+    (0, import_react4.useEffect)(() => {
       const host = hostRef.current;
       if (!ready || !host || editorRef.current) return;
       const editor = new ToastUIEditor({
         el: host,
         height: "100%",
-        initialEditType: "markdown",
-        previewStyle: "vertical",
+        // 仅所见即所得（WYSIWYG）模式
+        initialEditType: "wysiwyg",
+        hideModeSwitch: true,
         language: "zh-CN",
-        hideModeSwitch: false,
         autofocus: false,
         plugins: [[import_editor_plugin_code_syntax_highlight.default, { highlighter: import_prismjs2.default }]],
         toolbarItems: TOOLBAR_ITEMS,
@@ -88390,10 +88187,9 @@ def fib(n: int) -> int:
         noteIdRef.current = note.id;
         editor.setMarkdown(note.content, false);
       }
-      const preview = editor.getEditorElements().mdPreview;
-      const wysiwyg = editor.getEditorElements().wysiwyg;
+      const preview = editor.getEditorElements().wysiwyg;
       previewRef.current = preview ?? null;
-      const containers = [preview, wysiwyg].filter(Boolean);
+      const containers = [preview].filter(Boolean);
       let katexTimer = 0;
       const scheduleKatex = () => {
         window.clearTimeout(katexTimer);
@@ -88444,25 +88240,6 @@ def fib(n: int) -> int:
       const api = {
         getMarkdown: () => editor.getMarkdown(),
         getHtml: () => editor.getHTML(),
-        applyViewMode: (mode) => {
-          try {
-            if (editor.getCurrentMode() !== "markdown") {
-              editor.changeMode("markdown", false);
-            }
-            if (mode === "split") {
-              editor.changePreviewStyle("vertical");
-            } else {
-              editor.changePreviewStyle("tab");
-              const cls2 = mode === "write" ? "tab-editor" : "tab-preview";
-              const tab = host.querySelector(
-                `.toastui-editor-tabs-item.${cls2}`
-              );
-              tab?.click();
-            }
-          } catch (err) {
-            console.warn("[pi-markdown] applyViewMode", err);
-          }
-        },
         scrollToHeading: (index2) => {
           const container = previewRef.current;
           if (!container || !container.isConnected) return;
@@ -88489,7 +88266,7 @@ def fib(n: int) -> int:
         editor.destroy();
       };
     }, [ready]);
-    (0, import_react5.useEffect)(() => {
+    (0, import_react4.useEffect)(() => {
       const editor = editorRef.current;
       if (!editor) return;
       noteIdRef.current = note?.id ?? null;
@@ -88503,26 +88280,20 @@ def fib(n: int) -> int:
       }, 160);
       return () => window.clearTimeout(t);
     }, [note?.id]);
-    (0, import_react5.useEffect)(() => {
-      apiRef.current?.applyViewMode(viewMode);
-    }, [viewMode]);
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("main", { className: "relative flex min-w-0 flex-1 flex-col bg-bg", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex shrink-0 items-center gap-3 border-b border-edge px-5 pb-2 pt-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          "input",
-          {
-            value: note?.title ?? "",
-            onChange: (e) => note && dispatch({ type: "rename", id: note.id, name: e.target.value }),
-            placeholder: "\u7B14\u8BB0\u6807\u9898",
-            disabled: !note,
-            className: "min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint disabled:cursor-default"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "shrink-0 text-[10px] text-faint", children: "Markdown \u21C4 \u6240\u89C1\u5373\u6240\u5F97 \u53EF\u968F\u65F6\u5207\u6362" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref: hostRef, className: "toastui-editor-dark min-h-0 flex-1" }),
-      !note && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg text-muted", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("main", { className: "relative flex min-w-0 flex-1 flex-col bg-bg", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex shrink-0 items-center gap-3 border-b border-edge px-5 pb-2 pt-3", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "input",
+        {
+          value: note?.title ?? "",
+          onChange: (e) => note && dispatch({ type: "rename", id: note.id, name: e.target.value }),
+          placeholder: "\u7B14\u8BB0\u6807\u9898",
+          disabled: !note,
+          className: "min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint disabled:cursor-default"
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { ref: hostRef, className: "toastui-editor-dark min-h-0 flex-1" }),
+      !note && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg text-muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
           "svg",
           {
             viewBox: "0 0 24 24",
@@ -88531,13 +88302,13 @@ def fib(n: int) -> int:
             stroke: "currentColor",
             strokeWidth: "1.2",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M14 3v5h5M9 13h6M9 17h6" })
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M14 3v5h5M9 13h6M9 17h6" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { className: "text-sm", children: "\u4ECE\u5DE6\u4FA7\u9009\u62E9\u4E00\u7BC7\u7B14\u8BB0\uFF0C\u6216\u65B0\u5EFA\u4E00\u7BC7\u5F00\u59CB\u5199\u4F5C" }),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { className: "text-sm", children: "\u4ECE\u5DE6\u4FA7\u9009\u62E9\u4E00\u7BC7\u7B14\u8BB0\uFF0C\u6216\u65B0\u5EFA\u4E00\u7BC7\u5F00\u59CB\u5199\u4F5C" }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
           "button",
           {
             onClick: () => dispatch({ type: "newNote", parentId: null }),
@@ -88550,15 +88321,15 @@ def fib(n: int) -> int:
   }
 
   // src/components/ContextMenu.tsx
-  var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
   function ContextMenu2({ menu, onClose }) {
     if (!menu) return null;
     const style = {
       left: Math.min(menu.x, window.innerWidth - 220),
       top: Math.min(menu.y, window.innerHeight - menu.items.length * 32 - 16)
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "div",
         {
           className: "fixed inset-0 z-[800]",
@@ -88569,13 +88340,13 @@ def fib(n: int) -> int:
           }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "div",
         {
           className: "fixed z-[801] w-[200px] border border-edge2 bg-panel2 py-1",
           style,
           onContextMenu: (e) => e.preventDefault(),
-          children: menu.items.map((item2, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+          children: menu.items.map((item2, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
             "button",
             {
               className: `flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-panel ${item2.danger ? "text-danger" : "text-ink"}`,
@@ -88584,7 +88355,7 @@ def fib(n: int) -> int:
                 item2.onClick();
               },
               children: [
-                item2.icon && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                item2.icon && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                   "svg",
                   {
                     viewBox: "0 0 24 24",
@@ -88592,7 +88363,7 @@ def fib(n: int) -> int:
                     fill: "none",
                     stroke: "currentColor",
                     strokeWidth: "1.8",
-                    children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: item2.icon })
+                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: item2.icon })
                   }
                 ),
                 item2.label
@@ -88606,11 +88377,11 @@ def fib(n: int) -> int:
   }
 
   // src/components/Modal.tsx
-  var import_react6 = __toESM(require_react(), 1);
-  var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+  var import_react5 = __toESM(require_react(), 1);
+  var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
   function Modal({ modal, onClose, onSubmit }) {
-    const inputRef = (0, import_react6.useRef)(null);
-    (0, import_react6.useEffect)(() => {
+    const inputRef = (0, import_react5.useRef)(null);
+    (0, import_react5.useEffect)(() => {
       if (modal && modal.kind !== "delete") inputRef.current?.focus();
     }, [modal]);
     if (!modal) return null;
@@ -88618,22 +88389,22 @@ def fib(n: int) -> int:
     const title = modal.kind === "new-note" ? "\u65B0\u5EFA\u7B14\u8BB0" : modal.kind === "new-folder" ? "\u65B0\u5EFA\u6587\u4EF6\u5939" : modal.kind === "rename" ? "\u91CD\u547D\u540D" : "\u5220\u9664\u786E\u8BA4";
     const label = modal.kind === "new-note" ? "\u7B14\u8BB0\u6807\u9898" : modal.kind === "new-folder" ? "\u6587\u4EF6\u5939\u540D\u79F0" : modal.kind === "rename" ? "\u65B0\u540D\u79F0" : "";
     const defaultValue = modal.kind === "rename" ? modal.current : modal.kind === "new-note" ? "" : modal.kind === "new-folder" ? "" : "";
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "div",
       {
         className: "fixed inset-0 z-[900] flex items-center justify-center bg-black/60",
         onMouseDown: (e) => {
           if (e.target === e.currentTarget) onClose();
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "w-[360px] border border-edge2 bg-panel2 p-5", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { className: "mb-1 text-sm font-semibold text-ink", children: title }),
-          modal.kind === "delete" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("p", { className: "text-xs leading-5 text-muted", children: [
+        children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "w-[360px] border border-edge2 bg-panel2 p-5", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h3", { className: "mb-1 text-sm font-semibold text-ink", children: title }),
+          modal.kind === "delete" ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("p", { className: "text-xs leading-5 text-muted", children: [
             "\u786E\u5B9A\u8981\u5220\u9664",
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "mx-1 font-medium text-ink", children: modal.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "mx-1 font-medium text-ink", children: modal.name }),
             modal.childCount > 0 ? `\uFF08\u542B ${modal.childCount} \u4E2A\u5B50\u9879\uFF09` : "",
             "\u5417\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002"
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("label", { className: "mb-1 block text-xs text-muted", children: label }),
-          isInput && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+          ] }) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("label", { className: "mb-1 block text-xs text-muted", children: label }),
+          isInput && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
             "input",
             {
               ref: inputRef,
@@ -88647,8 +88418,8 @@ def fib(n: int) -> int:
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "mt-5 flex justify-end gap-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "mt-5 flex justify-end gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
               "button",
               {
                 className: "border border-edge2 px-3.5 py-1.5 text-xs text-muted hover:bg-panel hover:text-ink",
@@ -88656,14 +88427,14 @@ def fib(n: int) -> int:
                 children: "\u53D6\u6D88"
               }
             ),
-            isInput ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            isInput ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
               "button",
               {
                 className: "bg-accent px-3.5 py-1.5 text-xs text-black hover:bg-accent2",
                 onClick: () => onSubmit(inputRef.current?.value),
                 children: "\u786E\u5B9A"
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
               "button",
               {
                 className: "bg-danger px-3.5 py-1.5 text-xs text-white hover:opacity-90",
@@ -88678,22 +88449,22 @@ def fib(n: int) -> int:
   }
 
   // src/App.tsx
-  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
   function AppInner() {
     const state = useAppState();
     const dispatch = useAppDispatch();
-    const [ready, setReady] = (0, import_react7.useState)(false);
-    const [activeHeading, setActiveHeading] = (0, import_react7.useState)(-1);
-    const [menu, setMenu] = (0, import_react7.useState)(null);
-    const [modal, setModal] = (0, import_react7.useState)(null);
-    const editorApiRef = (0, import_react7.useRef)(null);
-    (0, import_react7.useEffect)(() => {
+    const [ready, setReady] = (0, import_react6.useState)(false);
+    const [activeHeading, setActiveHeading] = (0, import_react6.useState)(-1);
+    const [menu, setMenu] = (0, import_react6.useState)(null);
+    const [modal, setModal] = (0, import_react6.useState)(null);
+    const editorApiRef = (0, import_react6.useRef)(null);
+    (0, import_react6.useEffect)(() => {
       loadPrismLanguages().then(() => setReady(true)).catch((err) => {
         console.warn("[pi-markdown] prism load failed", err);
         setReady(true);
       });
     }, []);
-    (0, import_react7.useEffect)(() => {
+    (0, import_react6.useEffect)(() => {
       let cancelled = false;
       (async () => {
         const [initial, dir] = await Promise.all([loadInitial(), fetchDataDir()]);
@@ -88717,12 +88488,12 @@ def fib(n: int) -> int:
         cancelled = true;
       };
     }, []);
-    const stateRef = (0, import_react7.useRef)(state);
+    const stateRef = (0, import_react6.useRef)(state);
     stateRef.current = state;
-    const skipFirst = (0, import_react7.useRef)(true);
-    const syncTimer = (0, import_react7.useRef)(null);
-    const syncChain = (0, import_react7.useRef)(Promise.resolve());
-    (0, import_react7.useEffect)(() => {
+    const skipFirst = (0, import_react6.useRef)(true);
+    const syncTimer = (0, import_react6.useRef)(null);
+    const syncChain = (0, import_react6.useRef)(Promise.resolve());
+    (0, import_react6.useEffect)(() => {
       if (skipFirst.current) {
         skipFirst.current = false;
         return;
@@ -88743,23 +88514,23 @@ def fib(n: int) -> int:
         });
       }, 800);
     }, [state.tree, state.activeId, dispatch]);
-    const activeNote = (0, import_react7.useMemo)(
+    const activeNote = (0, import_react6.useMemo)(
       () => state.activeId ? findNote(state.tree, state.activeId) : null,
       [state.tree, state.activeId]
     );
-    const outlineItems = (0, import_react7.useMemo)(
+    const outlineItems = (0, import_react6.useMemo)(
       () => activeNote ? parseOutline(activeNote.content) : [],
       [activeNote]
     );
-    const searchHits = (0, import_react7.useMemo)(
+    const searchHits = (0, import_react6.useMemo)(
       () => searchTree(state.tree, state.query),
       [state.tree, state.query]
     );
-    const noteTotal = (0, import_react7.useMemo)(() => countNotes(state.tree), [state.tree]);
-    const registerApi = (0, import_react7.useCallback)((api) => {
+    const noteTotal = (0, import_react6.useMemo)(() => countNotes(state.tree), [state.tree]);
+    const registerApi = (0, import_react6.useCallback)((api) => {
       editorApiRef.current = api;
     }, []);
-    const handleContextMenu = (0, import_react7.useCallback)(
+    const handleContextMenu = (0, import_react6.useCallback)(
       (e, node) => {
         e.preventDefault();
         const isFolder = node.type === "folder";
@@ -88825,7 +88596,7 @@ def fib(n: int) -> int:
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [state.tree]
     );
-    const handleExport = (0, import_react7.useCallback)(
+    const handleExport = (0, import_react6.useCallback)(
       (kind, noteId) => {
         const note = noteId ? findNote(state.tree, noteId) : activeNote;
         if (!note) {
@@ -88859,7 +88630,7 @@ def fib(n: int) -> int:
       },
       [state.tree, activeNote, dispatch]
     );
-    const handleMove = (0, import_react7.useCallback)(
+    const handleMove = (0, import_react6.useCallback)(
       (id, targetId, pos) => {
         if (id === targetId) return;
         if (pos === "inside" && isDescendant(state.tree, id, targetId)) {
@@ -88870,14 +88641,14 @@ def fib(n: int) -> int:
       },
       [state.tree, dispatch]
     );
-    const handleOpen = (0, import_react7.useCallback)(
+    const handleOpen = (0, import_react6.useCallback)(
       (id) => {
         dispatch({ type: "setActive", id });
         if (state.query) dispatch({ type: "setQuery", q: "" });
       },
       [dispatch, state.query]
     );
-    const handleModalSubmit = (0, import_react7.useCallback)(
+    const handleModalSubmit = (0, import_react6.useCallback)(
       (value) => {
         if (!modal) return;
         if (modal.kind === "new-note") {
@@ -88901,21 +88672,9 @@ def fib(n: int) -> int:
       },
       [modal, dispatch]
     );
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex h-full w-full flex-col overflow-hidden bg-bg text-ink", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
-        TopBar,
-        {
-          viewMode: state.viewMode,
-          onViewMode: (mode) => dispatch({ type: "setViewMode", mode }),
-          onExport: handleExport,
-          saveState: state.saveState,
-          noteCount: noteTotal,
-          activeTitle: activeNote?.title ?? null,
-          canExport: !!activeNote
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex min-h-0 flex-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex h-full w-full flex-col overflow-hidden bg-bg text-ink", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex min-h-0 flex-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           Sidebar,
           {
             tree: state.tree,
@@ -88937,18 +88696,17 @@ def fib(n: int) -> int:
             onNavigateHeading: (index2) => editorApiRef.current?.scrollToHeading(index2)
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           EditorPane,
           {
             note: activeNote,
-            viewMode: state.viewMode,
             ready,
             registerApi,
             onHeadingChange: setActiveHeading
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
         StatusBar,
         {
           saveState: state.saveState,
@@ -88958,18 +88716,18 @@ def fib(n: int) -> int:
           wordCount: activeNote?.content.length ?? 0
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ContextMenu2, { menu, onClose: () => setMenu(null) }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Modal, { modal, onClose: () => setModal(null), onSubmit: handleModalSubmit }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ToastHost, {})
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(ContextMenu2, { menu, onClose: () => setMenu(null) }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Modal, { modal, onClose: () => setModal(null), onSubmit: handleModalSubmit }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(ToastHost, {})
     ] });
   }
   function App() {
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(AppProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(AppInner, {}) });
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AppProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AppInner, {}) });
   }
 
   // src/main.tsx
-  var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
-  (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime12.jsx)(App, {}));
+  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+  (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime11.jsx)(App, {}));
 })();
 /*! Bundled license information:
 

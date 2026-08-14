@@ -14,7 +14,6 @@ import { loadPrismLanguages } from "./lib/prism";
 import { exportNote } from "./lib/exporters";
 import { toast, ToastHost } from "./lib/toast";
 import { WELCOME_MD } from "./welcome";
-import TopBar from "./components/TopBar";
 import Sidebar from "./components/Sidebar";
 import StatusBar from "./components/StatusBar";
 import EditorPane, { type EditorApi } from "./components/EditorPane";
@@ -271,15 +270,6 @@ function AppInner() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-bg text-ink">
-      <TopBar
-        viewMode={state.viewMode}
-        onViewMode={(mode) => dispatch({ type: "setViewMode", mode })}
-        onExport={handleExport}
-        saveState={state.saveState}
-        noteCount={noteTotal}
-        activeTitle={activeNote?.title ?? null}
-        canExport={!!activeNote}
-      />
       <div className="flex min-h-0 flex-1">
         <Sidebar
           tree={state.tree}
@@ -304,7 +294,6 @@ function AppInner() {
         />
         <EditorPane
           note={activeNote}
-          viewMode={state.viewMode}
           ready={ready}
           registerApi={registerApi}
           onHeadingChange={setActiveHeading}

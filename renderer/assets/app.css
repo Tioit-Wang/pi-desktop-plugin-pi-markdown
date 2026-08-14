@@ -407,9 +407,6 @@ video {
 .left-2\.5 {
   left: 0.625rem;
 }
-.right-0 {
-  right: 0px;
-}
 .right-1 {
   right: 0.25rem;
 }
@@ -424,12 +421,6 @@ video {
 }
 .top-1\/2 {
   top: 50%;
-}
-.top-full {
-  top: 100%;
-}
-.z-50 {
-  z-index: 50;
 }
 .z-\[1000\] {
   z-index: 1000;
@@ -450,9 +441,6 @@ video {
 .mb-1 {
   margin-bottom: 0.25rem;
 }
-.ml-6 {
-  margin-left: 1.5rem;
-}
 .ml-auto {
   margin-left: auto;
 }
@@ -461,9 +449,6 @@ video {
 }
 .mt-1 {
   margin-top: 0.25rem;
-}
-.mt-1\.5 {
-  margin-top: 0.375rem;
 }
 .mt-5 {
   margin-top: 1.25rem;
@@ -477,23 +462,14 @@ video {
 .block {
   display: block;
 }
-.inline-block {
-  display: inline-block;
-}
 .flex {
   display: flex;
 }
 .table {
   display: table;
 }
-.hidden {
-  display: none;
-}
 .h-0\.5 {
   height: 0.125rem;
-}
-.h-12 {
-  height: 3rem;
 }
 .h-14 {
   height: 3.5rem;
@@ -506,9 +482,6 @@ video {
 }
 .h-4 {
   height: 1rem;
-}
-.h-5 {
-  height: 1.25rem;
 }
 .h-6 {
   height: 1.5rem;
@@ -534,12 +507,6 @@ video {
 .w-4 {
   width: 1rem;
 }
-.w-44 {
-  width: 11rem;
-}
-.w-5 {
-  width: 1.25rem;
-}
 .w-6 {
   width: 1.5rem;
 }
@@ -558,9 +525,6 @@ video {
 .min-w-0 {
   min-width: 0px;
 }
-.max-w-\[220px\] {
-  max-width: 220px;
-}
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -577,14 +541,6 @@ video {
 }
 .animate-\[toastIn_0\.18s_ease-out\] {
   animation: toastIn 0.18s ease-out;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 .cursor-pointer {
   cursor: pointer;
@@ -665,19 +621,11 @@ video {
   --tw-border-opacity: 1;
   border-color: rgb(74 74 74 / var(--tw-border-opacity));
 }
-.border-faint {
-  --tw-border-opacity: 1;
-  border-color: rgb(115 115 115 / var(--tw-border-opacity));
-}
 .border-ink\/70 {
   border-color: rgb(242 242 242 / 0.7);
 }
 .border-transparent {
   border-color: transparent;
-}
-.border-t-ink {
-  --tw-border-opacity: 1;
-  border-top-color: rgb(242 242 242 / var(--tw-border-opacity));
 }
 .bg-accent {
   --tw-bg-opacity: 1;
@@ -844,9 +792,6 @@ video {
 .leading-5 {
   line-height: 1.25rem;
 }
-.tracking-wide {
-  letter-spacing: 0.025em;
-}
 .text-black {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
@@ -987,6 +932,12 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
 }
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
+  zoom: 0.667;
+}
+.toastui-editor-contents img {
+  zoom: 0.667;
+}
 .toastui-editor-contents pre code::after {
   content: attr(data-language);
   position: absolute;
@@ -1018,10 +969,6 @@ body {
   --tw-border-opacity: 1;
   border-color: rgb(74 74 74 / var(--tw-border-opacity));
 }
-.hover\:border-ink:hover {
-  --tw-border-opacity: 1;
-  border-color: rgb(242 242 242 / var(--tw-border-opacity));
-}
 .hover\:bg-accent2:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -1048,19 +995,8 @@ body {
 .disabled\:cursor-default:disabled {
   cursor: default;
 }
-.disabled\:cursor-not-allowed:disabled {
-  cursor: not-allowed;
-}
-.disabled\:opacity-40:disabled {
-  opacity: 0.4;
-}
 .group:hover .group-hover\:opacity-100 {
   opacity: 1;
-}
-@media (min-width: 1024px) {
-  .lg\:inline {
-    display: inline;
-  }
 }
 
 /* node_modules/@toast-ui/editor/dist/toastui-editor.css */
