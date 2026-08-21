@@ -1,4 +1,5 @@
 import type { SaveState, ThemeMode } from "../types";
+import { getLocale, t } from "../lib/i18n";
 
 interface Props {
   saveState: SaveState;
@@ -20,7 +21,7 @@ export default function StatusBar({
   onToggleTheme,
 }: Props) {
   const time = saveState.at
-    ? new Date(saveState.at).toLocaleTimeString("zh-CN", { hour12: false })
+    ? new Date(saveState.at).toLocaleTimeString(getLocale(), { hour12: false })
     : "";
   return (
     <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-faint">
@@ -35,16 +36,18 @@ export default function StatusBar({
           <path d="M3 7h18M3 12h18M3 17h12" />
         </svg>
         {dataDir
-          ? `存储位置：${dataDir}`
-          : "浏览器预览模式（localStorage 存储）"}
+          ? t("status.storageLocation", { dir: dataDir })
+          : t("status.previewMode")}
       </span>
       <span className="ml-auto flex shrink-0 items-center gap-3">
-        {activeTitle && <span>{wordCount} 字符</span>}
-        <span>{noteCount} 篇笔记</span>
+        {activeTitle && (
+          <span>{t("status.chars", { count: wordCount })}</span>
+        )}
+        <span>{t("status.notes", { count: noteCount })}</span>
         <button
           onClick={onToggleTheme}
-          title={theme === "dark" ? "切换到米白主题" : "切换到黑夜主题"}
-          aria-label={theme === "dark" ? "切换到米白主题" : "切换到黑夜主题"}
+          title={theme === "dark" ? t("status.toLight") : t("status.toDark")}
+          aria-label={theme === "dark" ? t("status.toLight") : t("status.toDark")}
           className="flex items-center gap-1.5 text-faint transition-colors hover:text-ink"
         >
           {theme === "dark" ? (
@@ -69,7 +72,7 @@ export default function StatusBar({
               <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
             </svg>
           )}
-          {theme === "dark" ? "米白" : "黑夜"}
+          {theme === "dark" ? t("status.light") : t("status.dark")}
         </button>
         <span
           className={
@@ -81,12 +84,12 @@ export default function StatusBar({
           }
         >
           {saveState.status === "saving"
-            ? "保存中…"
+            ? t("status.saving")
             : saveState.status === "error"
-              ? "保存失败"
+              ? t("status.saveFailed")
               : time
-                ? `已保存 ${time}`
-                : "已就绪"}
+                ? t("status.savedAt", { time })
+                : t("status.ready")}
         </span>
       </span>
     </footer>

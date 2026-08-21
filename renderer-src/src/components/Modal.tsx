@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { t } from "../lib/i18n";
 
 export type ModalState =
   | { kind: "new-note"; parentId: string | null }
@@ -24,19 +25,19 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
   const isInput = modal.kind !== "delete";
   const title =
     modal.kind === "new-note"
-      ? "新建笔记"
+      ? t("modal.newNoteTitle")
       : modal.kind === "new-folder"
-        ? "新建文件夹"
+        ? t("modal.newFolderTitle")
         : modal.kind === "rename"
-          ? "重命名"
-          : "删除确认";
+          ? t("modal.renameTitle")
+          : t("modal.deleteTitle");
   const label =
     modal.kind === "new-note"
-      ? "笔记标题"
+      ? t("modal.noteTitleLabel")
       : modal.kind === "new-folder"
-        ? "文件夹名称"
+        ? t("modal.folderNameLabel")
         : modal.kind === "rename"
-          ? "新名称"
+          ? t("modal.newNameLabel")
           : "";
   const defaultValue =
     modal.kind === "rename"
@@ -58,10 +59,12 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
         <h3 className="mb-1 text-sm font-semibold text-ink">{title}</h3>
         {modal.kind === "delete" ? (
           <p className="text-xs leading-5 text-muted">
-            确定要删除
-            <span className="mx-1 font-medium text-ink">{modal.name}</span>
-            {modal.childCount > 0 ? `（含 ${modal.childCount} 个子项）` : ""}
-            吗？此操作不可撤销。
+            {modal.childCount > 0
+              ? t("modal.deleteConfirm", {
+                  name: modal.name,
+                  count: modal.childCount,
+                })
+              : t("modal.deleteConfirmSimple", { name: modal.name })}
           </p>
         ) : (
           <label className="mb-1 block text-xs text-muted">{label}</label>
@@ -73,7 +76,9 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
             className="mt-1 w-full border border-edge2 bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-ink"
             defaultValue={defaultValue}
             placeholder={
-              modal.kind === "new-note" ? "输入笔记标题…" : "输入名称…"
+              modal.kind === "new-note"
+                ? t("modal.noteTitlePlaceholder")
+                : t("modal.namePlaceholder")
             }
             onKeyDown={(e) => {
               if (e.key === "Enter")
@@ -88,21 +93,21 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
             className="border border-edge2 px-3.5 py-1.5 text-xs text-muted hover:bg-panel hover:text-ink"
             onClick={onClose}
           >
-            取消
+            {t("common.cancel")}
           </button>
           {isInput ? (
             <button
               className="bg-accent px-3.5 py-1.5 text-xs text-onaccent hover:bg-accent2"
               onClick={() => onSubmit(inputRef.current?.value)}
             >
-              确定
+              {t("common.confirm")}
             </button>
           ) : (
             <button
               className="bg-danger px-3.5 py-1.5 text-xs text-white hover:opacity-90"
               onClick={() => onSubmit()}
             >
-              删除
+              {t("common.delete")}
             </button>
           )}
         </div>

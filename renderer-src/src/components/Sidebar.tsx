@@ -1,6 +1,7 @@
 import type { SearchHit, TreeNode } from "../types";
 import NoteTree from "./NoteTree";
 import Outline from "./Outline";
+import { t } from "../lib/i18n";
 
 interface Props {
   tree: TreeNode[];
@@ -20,6 +21,7 @@ interface Props {
   onNewNote(parentId: string | null): void;
   onNewFolder(parentId: string | null): void;
   onNavigateHeading(index: number): void;
+  collapsed: boolean;
 }
 
 export default function Sidebar({
@@ -40,7 +42,9 @@ export default function Sidebar({
   onNewNote,
   onNewFolder,
   onNavigateHeading,
+  collapsed,
 }: Props) {
+  if (collapsed) return null;
   return (
     <aside className="flex w-[268px] shrink-0 flex-col border-r border-edge bg-panel">
       {/* 搜索框 */}
@@ -59,14 +63,14 @@ export default function Sidebar({
           <input
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="搜索全部笔记（标题 / 内容）"
+            placeholder={t("sidebar.searchPlaceholder")}
             className="w-full border border-edge bg-bg py-1.5 pl-8 pr-3 text-xs text-ink placeholder:text-faint outline-none transition-colors focus:border-ink"
           />
           {query && (
             <button
               className="absolute right-2 top-1/2 -translate-y-1/2 text-faint hover:text-ink"
               onClick={() => onQuery("")}
-              title="清空"
+              title={t("common.clear")}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -86,20 +90,20 @@ export default function Sidebar({
       <div className="flex gap-1 px-3">
         {(
           [
-            { key: "notes", label: "笔记" },
-            { key: "outline", label: "大纲" },
+            { key: "notes", label: t("sidebar.tabNotes") },
+            { key: "outline", label: t("sidebar.tabOutline") },
           ] as const
-        ).map((t) => (
+        ).map((t2) => (
           <button
-            key={t.key}
-            onClick={() => onTab(t.key)}
+            key={t2.key}
+            onClick={() => onTab(t2.key)}
             className={`px-3 py-1 text-xs transition-colors ${
-              tab === t.key
+              tab === t2.key
                 ? "bg-accent font-medium text-onaccent"
                 : "text-muted hover:bg-panel2 hover:text-ink"
             }`}
           >
-            {t.label}
+            {t2.label}
           </button>
         ))}
       </div>
@@ -109,7 +113,7 @@ export default function Sidebar({
         {query ? (
           searchHits.length === 0 ? (
             <p className="px-3 py-8 text-center text-xs text-faint">
-              未找到匹配「{query}」的笔记
+              {t("sidebar.noResults", { query })}
             </p>
           ) : (
             <div className="flex flex-col gap-1">
@@ -135,7 +139,7 @@ export default function Sidebar({
                     </span>
                     {hit.inTitle && (
                       <span className="shrink-0 bg-panel2 px-1 py-px text-[9px] text-ink">
-                        标题
+                        {t("sidebar.titleBadge")}
                       </span>
                     )}
                   </div>
@@ -152,7 +156,7 @@ export default function Sidebar({
                 </button>
               ))}
               <p className="px-2 pt-1 text-center text-[10px] text-faint">
-                共 {searchHits.length} 条结果
+                {t("sidebar.resultCount", { count: searchHits.length })}
               </p>
             </div>
           )
@@ -192,7 +196,7 @@ export default function Sidebar({
             >
               <path d="M12 5v14M5 12h14" />
             </svg>
-            新建笔记
+            {t("common.newNote")}
           </button>
           <button
             onClick={() => onNewFolder(null)}
@@ -208,10 +212,11 @@ export default function Sidebar({
               <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
               <path d="M12 11v4M10 13h4" />
             </svg>
-            新建文件夹
+            {t("common.newFolder")}
           </button>
         </div>
       )}
     </aside>
   );
 }
+

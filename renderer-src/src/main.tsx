@@ -6,5 +6,9 @@ import "@milkdown/crepe/theme/common/style.css";
 import "prismjs/themes/prism-tomorrow.css";
 import "katex/dist/katex.min.css";
 import App from "./App";
+import { setLocale } from "./lib/i18n";
+
+// 渲染前先按系统语言设定 <html lang>；宿主语言随后经桥接通道精确覆盖
+setLocale(navigator.language);
 
 createRoot(document.getElementById("root")!).render(<App />);

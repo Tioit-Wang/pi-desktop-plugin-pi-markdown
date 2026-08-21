@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import katex from "katex";
+import mermaid from "mermaid";
 import { refractor } from "refractor";
 import type { ExportKind, NoteNode } from "../types";
 import { registerRefractorLanguages } from "../generated/refractor-imports";
@@ -30,6 +31,31 @@ export function highlightCodeHtml(
     };
     const body = (root.children ?? []).map(hastToHtml).join("");
     return `<pre class="code-preview"><code class="language-${lang}">${body}</code></pre>`;
+  } catch {
+    return null;
+  }
+}
+
+/** Mermaid → 内联 SVG（导出用；失败返回 null） */
+let mermaidExportReady = false;
+let mermaidExportSeq = 0;
+async function renderMermaidExportSvg(
+  content: string,
+): Promise<string | null> {
+  if (!mermaidExportReady) {
+    mermaidExportReady = true;
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      theme: "default",
+    });
+  }
+  try {
+    const { svg } = await mermaid.render(
+      `pi-md-export-${++mermaidExportSeq}`,
+      content,
+    );
+    return svg;
   } catch {
     return null;
   }
@@ -82,15 +108,16 @@ function collectStyles(): string {
  * 由 Markdown 源码构建导出用 HTML：
  * 1. 经编辑器 parser+serializer 转换（行内公式由 math_inline.toDOM 渲染为 KaTeX）；
  * 2. 块级公式（code_block lang=latex）→ KaTeX display 公式；
- * 3. 其余代码块 → refractor 重新语法高亮。
+ * 3. mermaid 代码块 → mermaid 渲染为内嵌 SVG；
+ * 4. 其余代码块 → refractor 重新语法高亮。
  *
  * 不依赖实时编辑器 DOM——离屏的代码块/公式在编辑器里会被回收为占位符，
  * 用实时 DOM 导出会得到原始 LaTeX 源码与 Vue 组件噪声。
  */
-function renderBlockHtml(
+async function renderBlockHtml(
   markdown: string,
   getHtmlFromMarkdown: (md: string) => string,
-): string {
+): Promise<string> {
   ensureRefractorLanguages();
   const div = document.createElement("div");
   div.innerHTML = getHtmlFromMarkdown(markdown);
@@ -101,6 +128,16 @@ function renderBlockHtml(
     const lang = (pre.getAttribute("data-language") ?? "").toLowerCase();
     const code = pre.querySelector("code");
     const text = code?.textContent ?? "";
+    if (lang === "mermaid" && text.trim()) {
+      const svg = await renderMermaidExportSvg(text);
+      if (svg) {
+        const temp = document.createElement("div");
+        temp.innerHTML = svg;
+        pre.replaceWith(temp.firstElementChild as Element);
+        continue;
+      }
+      // 渲染失败：退化为普通代码块，高亮展示源码
+    }
     if (lang === "latex" && text.trim()) {
       const wrap = document.createElement("div");
       wrap.className = "katex-display";
@@ -123,12 +160,59 @@ function renderBlockHtml(
   return div.innerHTML;
 }
 
-export function exportNote(
+/**
+ * 兜底：清除克隆文档中残留的 color(srgb ...) / color-mix() 内联样式。
+ *
+ * html2canvas 无法解析这两种颜色（现代 Chromium 把 color-mix() 的计算值序列化为
+ * `color(srgb r g b / a)`，抛 "Attempting to parse an unsupported color function 'color'"；
+ * 旧版则原样返回 color-mix() 同样抛错）。主要防线在 index.css：所有 color-mix
+ * 声明已按主题覆盖为等效 rgba()，计算样式不再产生 color(srgb)；这里仅清理
+ * html2canvas 克隆阶段从源计算样式内联复制（SVG/伪元素）的残留值。
+ */
+function sanitizeCloneInlineColors(
+  doc: Document,
+  scope: HTMLElement | null,
+): void {
+  if (!scope) return;
+  const fix = (v: string): string =>
+    v
+      .replace(
+        /color\(\s*srgb\s+([\d.]+%?)\s+([\d.]+%?)\s+([\d.]+%?)(?:\s*\/\s*([\d.]+%?))?\s*\)/gi,
+        (_m, r: string, g: string, b: string, a?: string) => {
+          const chan = (x: string) =>
+            x.endsWith("%") ? (parseFloat(x) / 100) * 255 : parseFloat(x) * 255;
+          const alpha = a
+            ? a.endsWith("%")
+              ? parseFloat(a) / 100
+              : parseFloat(a)
+            : 1;
+          const rr = Math.round(chan(r));
+          const gg = Math.round(chan(g));
+          const bb = Math.round(chan(b));
+          const aa = Math.round(alpha * 10000) / 10000;
+          return aa >= 1
+            ? `rgb(${rr}, ${gg}, ${bb})`
+            : `rgba(${rr}, ${gg}, ${bb}, ${aa})`;
+        },
+      )
+      .replace(/color-mix\([^)]*\)/gi, "transparent");
+  const scan = (el: Element): void => {
+    const st = el.getAttribute("style");
+    if (st && /color\(|color-mix/i.test(st)) {
+      el.setAttribute("style", fix(st));
+    }
+    for (const child of Array.from(el.children)) scan(child);
+  };
+  scan(scope);
+  void doc;
+}
+
+export async function exportNote(
   kind: ExportKind,
   note: NoteNode,
   getMarkdown: () => string,
   getHtmlFromMarkdown: (md: string) => string,
-): Promise<void> | void {
+): Promise<void> {
   const markdown = getMarkdown();
   if (kind === "md") {
     download(
@@ -138,7 +222,7 @@ export function exportNote(
     );
     return;
   }
-  const bodyHtml = renderBlockHtml(markdown, getHtmlFromMarkdown);
+  const bodyHtml = await renderBlockHtml(markdown, getHtmlFromMarkdown);
   if (kind === "html") {
     const doc = `<!doctype html>
 <html lang="zh-CN">
@@ -176,6 +260,8 @@ body{background:#ffffff;color:#1b2430;padding:0;font-family:"Segoe UI","PingFang
         backgroundColor: "#ffffff",
         logging: false,
         useCORS: true,
+        onclone: (doc, element) =>
+          sanitizeCloneInlineColors(doc, element ?? doc.querySelector(".milkdown")),
       });
       download(
         `${safeName(note.title)}.png`,

@@ -8,6 +8,7 @@ export const WELCOME_MD = `# 欢迎使用 Pi Markdown 📝
 - [x] **所见即所得 Markdown 编辑**：输入 \`#\`、\`- [ ]\`、\`> \`、\`$…$\` 等语法即时变成样式（Typora 风格），斜杠菜单 \`/\` 插入更多块
 - [x] 左侧文件夹笔记树（支持多级嵌套）与 **H1–H5 五级大纲**
 - [x] 代码块 **297 种语言**语法高亮
+- [x] **Mermaid 图表**（输入 \`\`\`mermaid 即出图，随明暗主题切换）
 - [x] Todo 任务列表（编辑区可直接勾选）
 - [x] KaTeX 数学公式（行内 \`$...$\` 与块级 \`$$...$$\`）
 - [ ] 导出 Markdown / HTML / 图像
@@ -45,6 +46,18 @@ def fib(n: int) -> int:
     for _ in range(n):
         a, b = b, a + b
     return a
+\`\`\`
+
+## Mermaid 图表
+
+\`\`\`mermaid
+flowchart LR
+  A[开始] --> B{能上网？}
+  B -- 是 --> C[看文档]
+  B -- 否 --> D[查本地缓存]
+  C --> E[写笔记]
+  D --> E
+  E --> F[完成 🎉]
 \`\`\`
 
 ## 任务清单

@@ -8,10 +8,12 @@ import {
 import type {
   AppState,
   DropPos,
+  ExternalFile,
   FolderNode,
   NoteNode,
   SideTab,
   ThemeMode,
+  ThemeSource,
   TreeNode,
 } from "./types";
 import {
@@ -23,6 +25,7 @@ import {
   uid,
   updateNode,
 } from "./lib/tree";
+import { t } from "./lib/i18n";
 
 export type Action =
   | {
@@ -31,6 +34,7 @@ export type Action =
       activeId: string | null;
       dataDir: string | null;
       theme: ThemeMode;
+      themeSource: ThemeSource;
     }
   | { type: "newNote"; parentId: string | null; title?: string; content?: string }
   | { type: "newFolder"; parentId: string | null; name?: string }
@@ -42,6 +46,11 @@ export type Action =
   | { type: "setTab"; tab: SideTab }
   | { type: "setQuery"; q: string }
   | { type: "setTheme"; theme: ThemeMode }
+  // host 模式：官方外观通道推送的宿主亮暗 base（不改 themeSource）
+  | { type: "setThemeHost"; theme: ThemeMode }
+  | { type: "externalOpen"; file: ExternalFile }
+  | { type: "externalSave"; content: string }
+  | { type: "externalExit" }
   | { type: "setContent"; id: string; content: string }
   | {
       type: "setSave";
@@ -59,6 +68,8 @@ const initialState: AppState = {
   saveState: { status: "saved", at: null },
   dataDir: null,
   theme: "light",
+  themeSource: "host",
+  externalFile: null,
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -70,6 +81,7 @@ function reducer(state: AppState, action: Action): AppState {
         activeId: action.activeId,
         dataDir: action.dataDir,
         theme: action.theme,
+        themeSource: action.themeSource,
         expanded: {},
       };
 
@@ -77,7 +89,7 @@ function reducer(state: AppState, action: Action): AppState {
       const node: NoteNode = {
         id: uid("n"),
         type: "note",
-        title: action.title?.trim() || "新建笔记",
+        title: action.title?.trim() || t("common.newNote"),
         content: action.content ?? "",
         updatedAt: Date.now(),
       };
@@ -96,7 +108,7 @@ function reducer(state: AppState, action: Action): AppState {
       const node: FolderNode = {
         id: uid("f"),
         type: "folder",
-        name: action.name?.trim() || "新建文件夹",
+        name: action.name?.trim() || t("common.newFolder"),
         children: [],
       };
       const tree =
@@ -158,7 +170,22 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, query: action.q };
 
     case "setTheme":
+      // 面板内切换 = 手动覆盖（宿主主题不再自动生效）
+      return { ...state, theme: action.theme, themeSource: "manual" };
+
+    case "setThemeHost":
       return { ...state, theme: action.theme };
+
+    case "externalOpen":
+      return { ...state, externalFile: action.file };
+
+    case "externalSave":
+      return state.externalFile
+        ? { ...state, externalFile: { ...state.externalFile, content: action.content } }
+        : state;
+
+    case "externalExit":
+      return { ...state, externalFile: null };
 
     case "setContent":
       return {

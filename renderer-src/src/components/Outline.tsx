@@ -1,4 +1,5 @@
 import type { OutlineItem } from "../types";
+import { t } from "../lib/i18n";
 
 interface Props {
   items: OutlineItem[];
@@ -19,10 +20,7 @@ export default function Outline({ items, activeIndex, onNavigate }: Props) {
         >
           <path d="M4 6h16M4 12h16M4 18h10" />
         </svg>
-        <p>
-          当前笔记没有标题
-          <br />（使用 # ～ ##### 添加）
-        </p>
+        <p>{t("outline.empty")}</p>
       </div>
     );
   }

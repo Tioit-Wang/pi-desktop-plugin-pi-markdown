@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { DropPos, TreeNode } from "../types";
+import { t } from "../lib/i18n";
 
 interface Props {
   nodes: TreeNode[];
@@ -153,7 +154,7 @@ function Row({
         <>
           <span className="w-3 shrink-0" />
           <NoteIcon active={active} />
-          <span className="truncate">{node.title || "未命名笔记"}</span>
+          <span className="truncate">{node.title || t("common.untitledNote")}</span>
         </>
       )}
 

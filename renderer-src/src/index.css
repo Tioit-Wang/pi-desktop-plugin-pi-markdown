@@ -155,6 +155,147 @@ body {
   --crepe-color-inline-area: #2a2a2a;
 }
 
+/* ========== html2canvas 兼容：color-mix 等效覆盖 ==========
+ * Crepe 默认样式大量使用 color-mix(in srgb, var(--crepe-color-*), transparent N%)。
+ * 现代 Chromium 把它的计算值序列化为 color(srgb ...)，html2canvas 解析即抛
+ * "Attempting to parse an unsupported color function 'color'"（导出图像失败）；
+ * 旧版 Chromium 则原样返回 color-mix()，同样抛 "Unable to parse color"。
+ * 这里把每条 color-mix 声明按主题覆盖为等效 rgba()（视觉一致、可被 html2canvas 解析）。
+ */
+
+/* 行内代码 / 代码块底色（inline-area @60%） */
+.milkdown .ProseMirror code,
+.milkdown .ProseMirror pre {
+  background: rgba(240, 237, 230, 0.6) !important;
+}
+[data-theme="dark"] .milkdown .ProseMirror code,
+[data-theme="dark"] .milkdown .ProseMirror pre {
+  background: rgba(42, 42, 42, 0.6) !important;
+}
+
+/* 选中节点遮罩（selected @40%） */
+.milkdown .ProseMirror .ProseMirror-selectednode,
+.milkdown .milkdown-image-block.selected > .image-edit:not(:has(input:focus))::before,
+.milkdown .milkdown-image-block.selected > .image-wrapper::before {
+  background: rgba(228, 222, 210, 0.4) !important;
+}
+[data-theme="dark"] .milkdown .ProseMirror .ProseMirror-selectednode,
+[data-theme="dark"] .milkdown .milkdown-image-block.selected > .image-edit:not(:has(input:focus))::before,
+[data-theme="dark"] .milkdown .milkdown-image-block.selected > .image-wrapper::before {
+  background: rgba(56, 56, 56, 0.4) !important;
+}
+
+/* 分割线 / 分隔条底色（outline @20%） */
+.milkdown .ProseMirror hr,
+.milkdown .ProseMirror hr.ProseMirror-selectednode::before,
+.milkdown .milkdown-slash-menu .menu-groups .menu-group + .menu-group::before,
+.milkdown .milkdown-toolbar .divider,
+.milkdown .milkdown-top-bar .top-bar-divider {
+  background-color: rgba(213, 207, 194, 0.2) !important;
+}
+[data-theme="dark"] .milkdown .ProseMirror hr,
+[data-theme="dark"] .milkdown .ProseMirror hr.ProseMirror-selectednode::before,
+[data-theme="dark"] .milkdown .milkdown-slash-menu .menu-groups .menu-group + .menu-group::before,
+[data-theme="dark"] .milkdown .milkdown-toolbar .divider,
+[data-theme="dark"] .milkdown .milkdown-top-bar .top-bar-divider {
+  background-color: rgba(74, 74, 74, 0.2) !important;
+}
+
+/* 选中分割线（outline @80%） */
+.milkdown .ProseMirror hr.ProseMirror-selectednode {
+  background-color: rgba(213, 207, 194, 0.8) !important;
+}
+[data-theme="dark"] .milkdown .ProseMirror hr.ProseMirror-selectednode {
+  background-color: rgba(74, 74, 74, 0.8) !important;
+}
+
+/* 底部分隔线（outline @20%） */
+.milkdown .milkdown-slash-menu .tab-group,
+.milkdown .milkdown-top-bar {
+  border-bottom: 1px solid rgba(213, 207, 194, 0.2) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-slash-menu .tab-group,
+[data-theme="dark"] .milkdown .milkdown-top-bar {
+  border-bottom: 1px solid rgba(74, 74, 74, 0.2) !important;
+}
+
+/* 次级文字（on-surface @60%） */
+.milkdown .milkdown-slash-menu .menu-groups .menu-group h6,
+.milkdown .milkdown-code-block .preview-panel .preview-label {
+  color: rgba(46, 44, 41, 0.6) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-slash-menu .menu-groups .menu-group h6,
+[data-theme="dark"] .milkdown .milkdown-code-block .preview-panel .preview-label {
+  color: rgba(242, 242, 242, 0.6) !important;
+}
+
+/* 占位/弱化文字（on-background @40%） */
+.milkdown .milkdown-image-inline .empty-image-inline .link-importer .placeholder,
+.milkdown .milkdown-image-block .image-edit .link-importer .placeholder,
+.milkdown .crepe-placeholder::before {
+  color: rgba(46, 44, 41, 0.4) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-image-inline .empty-image-inline .link-importer .placeholder,
+[data-theme="dark"] .milkdown .milkdown-image-block .image-edit .link-importer .placeholder,
+[data-theme="dark"] .milkdown .crepe-placeholder::before {
+  color: rgba(242, 242, 242, 0.4) !important;
+}
+
+/* 拖拽落点光标（outline @50%） */
+.milkdown .crepe-drop-cursor {
+  background-color: rgba(213, 207, 194, 0.5) !important;
+}
+[data-theme="dark"] .milkdown .crepe-drop-cursor {
+  background-color: rgba(74, 74, 74, 0.5) !important;
+}
+
+/* 表格单元格边框（outline @20%） */
+.milkdown .milkdown-table-block td {
+  border: 1px solid rgba(213, 207, 194, 0.2) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-table-block td {
+  border: 1px solid rgba(74, 74, 74, 0.2) !important;
+}
+
+/* AI 指令输入框 / 流式指示（primary 低透明度边框） */
+.milkdown .ai-instruction-input {
+  border: 1px solid rgba(51, 50, 47, 0.35) !important;
+}
+[data-theme="dark"] .milkdown .ai-instruction-input {
+  border: 1px solid rgba(245, 245, 245, 0.35) !important;
+}
+.milkdown .milkdown-ai-streaming-indicator {
+  border: 1px solid rgba(51, 50, 47, 0.2) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-ai-streaming-indicator {
+  border: 1px solid rgba(245, 245, 245, 0.2) !important;
+}
+.milkdown .milkdown-ai-streaming-spinner {
+  border: 1.5px solid rgba(51, 50, 47, 0.25) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-ai-streaming-spinner {
+  border: 1.5px solid rgba(245, 245, 245, 0.25) !important;
+}
+.milkdown .milkdown-ai-diff-actions {
+  border: 1px solid rgba(51, 50, 47, 0.18) !important;
+}
+[data-theme="dark"] .milkdown .milkdown-ai-diff-actions {
+  border: 1px solid rgba(245, 245, 245, 0.18) !important;
+}
+
+/* AI 指令提交按钮（primary 85% + white 15%） */
+.milkdown .ai-instruction-submit:hover:not(:disabled) {
+  background: rgb(82, 81, 78) !important;
+}
+[data-theme="dark"] .milkdown .ai-instruction-submit:hover:not(:disabled) {
+  background: rgb(247, 247, 247) !important;
+}
+
+/* 所见即所得：隐藏块左侧的「添加 + 拖拽」手柄（/ 斜杠菜单不受影响） */
+.milkdown .milkdown-block-handle {
+  display: none !important;
+}
+
 /* 编辑区：收窄默认的巨大留白（60px 120px → 40px 64px），底部留出书写余量 */
 .milkdown .ProseMirror {
   padding: 24px 64px 45vh;
@@ -229,6 +370,27 @@ body {
   color: rgb(var(--c-faint));
 }
 
+/* 代码块预览内容左对齐（Crepe 默认居中，等特异性需 !important） */
+.milkdown .milkdown-code-block .preview-panel .preview {
+  text-align: left !important;
+}
+/* Mermaid 图表（```mermaid 代码块实时渲染，随明暗主题切换；导出 SVG 同理自适应） */
+.milkdown .milkdown-code-block .preview-panel .preview svg,
+.pi-md-export svg {
+  max-width: 100%;
+  height: auto;
+}
+.milkdown .milkdown-code-block .mermaid-error,
+.pi-md-export .mermaid-error {
+  padding: 8px 12px;
+  border: 1px dashed rgb(var(--c-danger));
+  border-radius: 4px;
+  color: rgb(var(--c-danger));
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 /* 代码块语言标签（data-language 由 Crepe 代码块组件写入） */
 .milkdown .ProseMirror pre[data-language]::after {
   content: attr(data-language);
@@ -245,6 +407,12 @@ body {
   margin: 12px 0;
   overflow-x: auto;
   overflow-y: hidden;
+  text-align: left; /* 块级公式左对齐（覆盖 KaTeX 默认居中） */
+}
+
+/* KaTeX 内层同样居中，需一并改为左对齐 */
+.milkdown .katex-display > .katex {
+  text-align: left;
 }
 
 /* CodeMirror 代码块编辑区：浅色跟随默认主题（深色由 oneDark 接管，不做覆盖） */
@@ -259,9 +427,15 @@ body {
   border-right: 1px solid rgb(var(--c-edge));
   color: rgb(var(--c-faint));
 }
-[data-theme="light"] .milkdown .cm-editor .cm-activeLine,
-[data-theme="light"] .milkdown .cm-editor .cm-activeLineGutter {
-  background: rgb(var(--c-panel2));
+/* 代码块高亮行：默认不显示（无论是否点击），仅悬停代码块时显示；
+   深色主题 oneDark 的样式在运行时注入（晚于本表），需 !important 覆盖 */
+.milkdown .cm-editor .cm-activeLine,
+.milkdown .cm-editor .cm-activeLineGutter {
+  background: transparent !important;
+}
+.milkdown .milkdown-code-block:hover .cm-activeLine,
+.milkdown .milkdown-code-block:hover .cm-activeLineGutter {
+  background: rgb(var(--c-panel2)) !important;
 }
 
 /* 图片圆角适度 */
