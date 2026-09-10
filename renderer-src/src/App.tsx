@@ -11,7 +11,7 @@ import {
   searchTree,
 } from "./lib/tree";
 import {
-  exitExternalFile,
+  exitExternalFileNow,
   fetchDataDir,
   fetchLocale,
   hasBridge,
@@ -103,7 +103,7 @@ function AppInner() {
     document.documentElement.dataset.theme = state.theme;
   }, [state.theme]);
 
-  /* 外部文件会话：轮询主进程待打开文件（open_file 工具驱动） */
+  /* 外部文件会话：轮询主进程待打开文件（preview_file 工具驱动） */
   useEffect(() => {
     if (!hasBridge()) return;
     let alive = true;
@@ -114,9 +114,7 @@ function AppInner() {
         if (!alive) return;
         if (file) {
           dispatch({ type: "externalOpen", file });
-          toast(
-            t("external.banner") + " — " + file.name,
-          );
+          toast(t("external.previewBadge") + " — " + file.name);
         }
       } catch {
         /* 单次失败不中断轮询 */
@@ -129,6 +127,19 @@ function AppInner() {
       window.clearTimeout(timer);
     };
   }, [dispatch]);
+
+  /* 面板关闭 → 同步结束外部文件会话。
+     否则主进程要等心跳超时（60s）才释放槽位，这期间新的工具调用会被 CONFLICT 拒绝。
+     用同步通道是为了赶在窗口销毁前把消息发出去（异步 invoke 会被丢弃）。 */
+  useEffect(() => {
+    const teardown = () => exitExternalFileNow();
+    window.addEventListener("pagehide", teardown);
+    window.addEventListener("beforeunload", teardown);
+    return () => {
+      window.removeEventListener("pagehide", teardown);
+      window.removeEventListener("beforeunload", teardown);
+    };
+  }, []);
 
   /* 自动保存：树/活动笔记/主题变化 → 防抖 800ms；外部文件会话走 file.save */
   const stateRef = useRef(state);
@@ -352,13 +363,6 @@ function AppInner() {
     [modal, dispatch],
   );
 
-  /* ---------- 退出外部文件会话 ---------- */
-  const handleExitExternal = useCallback(() => {
-    void exitExternalFile().finally(() => {
-      dispatch({ type: "externalExit" });
-    });
-  }, [dispatch]);
-
   const inExternalMode = !!state.externalFile;
 
   return (
@@ -395,7 +399,7 @@ function AppInner() {
           sidebarOpen={sidebarOpen && !inExternalMode}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           external={inExternalMode}
-          onExitExternal={handleExitExternal}
+          externalPath={state.externalFile?.path ?? null}
         />
       </div>
       <StatusBar

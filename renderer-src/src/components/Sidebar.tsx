@@ -99,7 +99,7 @@ export default function Sidebar({
             onClick={() => onTab(t2.key)}
             className={`px-3 py-1 text-xs transition-colors ${
               tab === t2.key
-                ? "bg-accent font-medium text-onaccent"
+                ? "bg-sel font-medium text-onsel"
                 : "text-muted hover:bg-panel2 hover:text-ink"
             }`}
           >

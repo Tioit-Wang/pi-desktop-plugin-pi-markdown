@@ -228,7 +228,7 @@ export async function fetchDataDir(): Promise<string | null> {
   }
 }
 
-/* ---------- 外部文件会话（Agent 工具 open_file 驱动，单文件模式） ---------- */
+/* ---------- 外部文件会话（Agent 工具 preview_file 驱动，单文件预览） ---------- */
 
 /**
  * 轮询拉取待打开的外部文件。有则返回文件（并同时作为会话心跳），
@@ -241,7 +241,10 @@ export async function pullExternalFile(): Promise<ExternalFile | null> {
       id: "file.pull",
       enabled: true,
     })) as
-      | { ok?: boolean; file?: { path?: string; name?: string; content?: string } }
+      | {
+          ok?: boolean;
+          file?: { path?: string; name?: string; content?: string };
+        }
       | null;
     if (
       res?.file &&
@@ -260,6 +263,29 @@ export async function pullExternalFile(): Promise<ExternalFile | null> {
   }
 }
 
+/**
+ * 结束外部文件会话（面板关闭 / 回到笔记时调用）。
+ *
+ * 优先走同步通道（`send` → ipcRenderer.sendSync）：面板正在销毁时异步 invoke 的
+ * 消息可能来不及送达，而主进程要等心跳超时（60s）才释放槽位，这段时间内新的
+ * 工具调用会被 CONFLICT 拒绝。旧版宿主没有同步通道时退回异步 invoke。
+ */
+export function exitExternalFileNow(): void {
+  if (!hasBridge()) return;
+  const bridge = window.pluginBridge!;
+  try {
+    if (typeof bridge.send === "function") {
+      bridge.send("skill.setEnabled", { id: "file.exit", enabled: true });
+      return;
+    }
+  } catch {
+    /* 落到异步通道 */
+  }
+  void bridge
+    .invoke("skill.setEnabled", { id: "file.exit", enabled: true })
+    .catch(() => undefined);
+}
+
 /** 外部文件内容写回磁盘（主进程校验路径一致并落盘） */
 export async function saveExternalFile(
   path: string,
@@ -276,17 +302,4 @@ export async function saveExternalFile(
     content,
   })) as { ok?: boolean; bytes?: number; at?: number };
   return { bytes: res?.bytes ?? content.length, at: res?.at ?? Date.now() };
-}
-
-/** 退出外部文件会话，回到笔记模式 */
-export async function exitExternalFile(): Promise<void> {
-  if (!hasBridge()) return;
-  try {
-    await window.pluginBridge!.invoke("skill.setEnabled", {
-      id: "file.exit",
-      enabled: true,
-    });
-  } catch {
-    /* 退出失败不阻塞 UI */
-  }
 }

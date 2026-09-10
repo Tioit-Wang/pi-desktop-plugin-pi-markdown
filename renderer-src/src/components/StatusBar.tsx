@@ -24,7 +24,7 @@ export default function StatusBar({
     ? new Date(saveState.at).toLocaleTimeString(getLocale(), { hour12: false })
     : "";
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-faint">
+    <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-muted">
       <span className="flex items-center gap-1.5 truncate">
         <svg
           viewBox="0 0 24 24"
@@ -48,7 +48,7 @@ export default function StatusBar({
           onClick={onToggleTheme}
           title={theme === "dark" ? t("status.toLight") : t("status.toDark")}
           aria-label={theme === "dark" ? t("status.toLight") : t("status.toDark")}
-          className="flex items-center gap-1.5 text-faint transition-colors hover:text-ink"
+          className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
         >
           {theme === "dark" ? (
             <svg

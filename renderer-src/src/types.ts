@@ -56,13 +56,13 @@ export interface AppState {
   dataDir: string | null;
   theme: ThemeMode;
   themeSource: ThemeSource;
-  /** 非空 = 单文件模式（Agent 工具 open_file 打开的外部文件） */
+  /** 非空 = 单文件预览模式（Agent 工具 preview_file 打开的外部文件） */
   externalFile: ExternalFile | null;
 }
 
 export type ExportKind = "md" | "html" | "png";
 
-/** 外部文件（Agent 工具 open_file 打开的单文件编辑会话，不进入笔记树） */
+/** 外部文件（Agent 工具 preview_file 打开的只读预览会话，不进入笔记树） */
 export interface ExternalFile {
   path: string;
   name: string;

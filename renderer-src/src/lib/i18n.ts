@@ -100,13 +100,12 @@ const zhCN = {
   "editor.blockTable": "表格",
   "editor.blockMath": "公式",
 
-  /* 外部文件（单文件模式） */
-  "external.banner": "单文件模式",
-  "external.saveHint": "编辑自动保存回原文件",
-  "external.exit": "返回笔记",
+  /* 外部文件（preview_file 只读预览会话） */
   "external.saveFailed": "保存失败：{msg}",
   "external.saved": "已保存 {name}",
   "external.waiting": "正在打开文件…",
+  "external.previewBadge": "只读预览",
+  "external.edit": "编辑",
 
   /* 提示 */
   "toast.saveFailed": "保存失败：{msg}",
@@ -206,12 +205,11 @@ const en: Record<keyof typeof zhCN, string> = {
   "editor.blockTable": "Table",
   "editor.blockMath": "Formula",
 
-  "external.banner": "Single-file mode",
-  "external.saveHint": "Edits save back to the original file",
-  "external.exit": "Back to notes",
   "external.saveFailed": "Save failed: {msg}",
   "external.saved": "Saved {name}",
   "external.waiting": "Opening file…",
+  "external.previewBadge": "Read-only preview",
+  "external.edit": "Edit",
 
   "toast.saveFailed": "Save failed: {msg}",
   "toast.exported": "Exported {kind} file",

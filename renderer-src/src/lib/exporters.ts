@@ -232,13 +232,13 @@ export async function exportNote(
 <title>${escapeHtml(note.title)}</title>
 <style>
 ${collectStyles()}
-body{background:#ffffff;color:#1b2430;padding:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#ffffff;color:#3d4852;padding:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 </style>
 </head>
 <body>
 <div class="milkdown pi-md-export"
-  style="--crepe-color-background:#ffffff;--crepe-color-on-background:#1b2430;--crepe-color-inline-code:#d6336c;--crepe-color-primary:#0969da;--crepe-color-inline-area:#eef1f5;--crepe-color-selected:#e2e8f0;--crepe-color-outline:#cbd5e1;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f6f8fa;--crepe-color-on-surface:#1b2430;--crepe-color-on-surface-variant:#57606a;--crepe-color-hover:#eef1f5">
-  <div class="editor ProseMirror" style="padding:40px 24px;max-width:860px;margin:0 auto">${bodyHtml}</div>
+  style="--crepe-color-background:#ffffff;--crepe-color-on-background:#3d4852;--crepe-color-inline-code:#c7254e;--crepe-color-primary:#3b82c4;--crepe-color-inline-area:#f1f5f9;--crepe-color-selected:#d4e4f7;--crepe-color-outline:#e2e8f0;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f8fafc;--crepe-color-on-surface:#3d4852;--crepe-color-on-surface-variant:#5a6872;--crepe-color-hover:#f1f5f9">
+  <div class="editor ProseMirror" style="padding:2em 2.5em;max-width:860px;margin:0 auto">${bodyHtml}</div>
 </div>
 </body>
 </html>`;
@@ -250,9 +250,9 @@ body{background:#ffffff;color:#1b2430;padding:0;font-family:"Segoe UI","PingFang
     const wrap = document.createElement("div");
     wrap.className = "milkdown pi-md-export";
     wrap.style.cssText =
-      "position:fixed;left:-9999px;top:0;width:860px;background:#ffffff;color:#1b2430;box-sizing:border-box;z-index:-1;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;" +
-      "--crepe-color-background:#ffffff;--crepe-color-on-background:#1b2430;--crepe-color-inline-code:#d6336c;--crepe-color-primary:#0969da;--crepe-color-inline-area:#eef1f5;--crepe-color-selected:#e2e8f0;--crepe-color-outline:#cbd5e1;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f6f8fa;--crepe-color-on-surface:#1b2430;--crepe-color-on-surface-variant:#57606a;--crepe-color-hover:#eef1f5";
-    wrap.innerHTML = `<div class="editor ProseMirror" style="padding:48px">${bodyHtml}</div>`;
+      "position:fixed;left:-9999px;top:0;width:860px;background:#ffffff;color:#3d4852;box-sizing:border-box;z-index:-1;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;" +
+      "--crepe-color-background:#ffffff;--crepe-color-on-background:#3d4852;--crepe-color-inline-code:#c7254e;--crepe-color-primary:#3b82c4;--crepe-color-inline-area:#f1f5f9;--crepe-color-selected:#d4e4f7;--crepe-color-outline:#e2e8f0;--crepe-color-surface:#ffffff;--crepe-color-surface-low:#f8fafc;--crepe-color-on-surface:#3d4852;--crepe-color-on-surface-variant:#5a6872;--crepe-color-hover:#f1f5f9";
+    wrap.innerHTML = `<div class="editor ProseMirror" style="padding:2em 2.5em">${bodyHtml}</div>`;
     document.body.appendChild(wrap);
     try {
       const canvas = await html2canvas(wrap, {

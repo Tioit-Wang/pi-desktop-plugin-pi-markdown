@@ -50,7 +50,6 @@ export type Action =
   | { type: "setThemeHost"; theme: ThemeMode }
   | { type: "externalOpen"; file: ExternalFile }
   | { type: "externalSave"; content: string }
-  | { type: "externalExit" }
   | { type: "setContent"; id: string; content: string }
   | {
       type: "setSave";
@@ -183,9 +182,6 @@ function reducer(state: AppState, action: Action): AppState {
       return state.externalFile
         ? { ...state, externalFile: { ...state.externalFile, content: action.content } }
         : state;
-
-    case "externalExit":
-      return { ...state, externalFile: null };
 
     case "setContent":
       return {

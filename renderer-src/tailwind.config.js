@@ -13,6 +13,8 @@ export default {
         accent: "rgb(var(--c-accent) / <alpha-value>)",
         accent2: "rgb(var(--c-accent2) / <alpha-value>)",
         onaccent: "rgb(var(--c-onaccent) / <alpha-value>)",
+        sel: "rgb(var(--c-sel) / <alpha-value>)",
+        onsel: "rgb(var(--c-onsel) / <alpha-value>)",
         ink: "rgb(var(--c-ink) / <alpha-value>)",
         muted: "rgb(var(--c-muted) / <alpha-value>)",
         faint: "rgb(var(--c-faint) / <alpha-value>)",

@@ -1,7 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { defaultKeymap, indentWithTab } from "@codemirror/commands";
-import { oneDark } from "@codemirror/theme-one-dark";
-import { keymap } from "@codemirror/view";
 import { Crepe } from "@milkdown/crepe";
 import mermaid from "mermaid";
 import { EditorStatus, parserCtx, schemaCtx } from "@milkdown/kit/core";
@@ -9,10 +6,10 @@ import { codeBlockConfig } from "@milkdown/kit/component/code-block";
 import { DOMSerializer } from "@milkdown/kit/prose/model";
 import { prism, prismConfig } from "@milkdown/plugin-prism";
 import { replaceAll } from "@milkdown/utils";
-import { basicSetup } from "codemirror";
 import type { ExportKind, NoteNode, ThemeMode } from "../types";
 import { EXTERNAL_NOTE_ID } from "../types";
 import { registerRefractorLanguages } from "../generated/refractor-imports";
+import { typoraCodeTheme } from "../lib/codeTheme";
 import { toast } from "../lib/toast";
 import { getLocale, t } from "../lib/i18n";
 import { useAppDispatch } from "../store";
@@ -32,9 +29,10 @@ interface Props {
   theme: ThemeMode;
   sidebarOpen: boolean;
   onToggleSidebar(): void;
-  /** 单文件模式（Agent 工具 open_file 打开的外部文件） */
+  /** 单文件预览模式（Agent 工具 preview_file 打开的外部文件） */
   external: boolean;
-  onExitExternal(): void;
+  /** 当前外部文件的绝对路径（用于在切换文件时重置只读态） */
+  externalPath: string | null;
 }
 
 /** 标题栏导出菜单项（与侧边栏右键菜单同款图标/文案） */
@@ -102,7 +100,7 @@ export default function EditorPane({
   sidebarOpen,
   onToggleSidebar,
   external,
-  onExitExternal,
+  externalPath,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null); // Crepe 挂载点
   const scrollRef = useRef<HTMLDivElement>(null); // 滚动容器
@@ -121,6 +119,28 @@ export default function EditorPane({
   const dispatch = useAppDispatch();
   // 当前界面语言：语言切换会触发重渲染，本组件据此重建编辑器文案
   const locale = getLocale();
+
+  /**
+   * 预览模式下的「已解锁编辑」标志。
+   * preview_file 打开的文档一律先以只读呈现，用户点标题栏的「编辑」后才可修改。
+   */
+  const [editing, setEditing] = useState(false);
+  const readonly = external && !editing;
+  const readonlyRef = useRef(readonly);
+  readonlyRef.current = readonly;
+
+  // 换了外部文件（或退出会话回到笔记）→ 回到只读预览
+  useEffect(() => {
+    setEditing(false);
+  }, [externalPath, external]);
+
+  /* 只读态：Crepe 的 setReadonly 会切 ProseMirror 的 editable，
+     顺带让块手柄、斜杠菜单等交互自行隐藏（Milkdown 按 view.editable 判断）。 */
+  useEffect(() => {
+    const current = crepeRef.current;
+    if (!current || current.editor.status !== EditorStatus.Created) return;
+    current.setReadonly(readonly);
+  }, [readonly, note?.id]);
 
   /* ---------- 标题栏导出菜单（点击外部 / Esc 关闭） ---------- */
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -189,12 +209,59 @@ export default function EditorPane({
     return undefined; // 异步渲染 → 组件先显示 previewLoading
   };
 
-  /** 代码块 CodeMirror 扩展（随主题切换 oneDark 深色编辑器） */
-  const cmExtensions = (dark: boolean) => [
-    keymap.of(defaultKeymap.concat(indentWithTab)),
-    basicSetup,
-    ...(dark ? [oneDark] : []),
-  ];
+  /**
+   * 按当前主题重画已渲染的 Mermaid 图表。
+   *
+   * mermaid 的明/暗主题在 render 时确定，SVG 是渲染期快照；而 Crepe 不会因主题
+   * 变化重建预览面板（已存在的 DOM 原样保留），所以切换主题后图表会停留在旧配色
+   * ——深色底上留一张浅色图。这里主动重画一次。
+   */
+  const refreshMermaidPanels = async (next: ThemeMode) => {
+    const host = hostRef.current;
+    if (!host) return;
+    const blocks = Array.from(
+      host.querySelectorAll<HTMLElement>(".milkdown-code-block"),
+    ).filter((block) => {
+      const btn = block.querySelector(".tools .language-button");
+      return (btn?.textContent ?? "").trim().toLowerCase() === "mermaid";
+    });
+    if (blocks.length === 0) return;
+    if (mermaidThemeRef.current !== next) {
+      mermaidThemeRef.current = next;
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: next === "dark" ? "dark" : "default",
+      });
+    }
+    for (const block of blocks) {
+      const holder = block.querySelector<HTMLElement>(".preview-panel .preview");
+      // CodeMirror 每行一个 .cm-line，直接取 textContent 会丢掉换行，需逐行拼接
+      const source = Array.from(
+        block.querySelectorAll<HTMLElement>(".cm-content .cm-line"),
+      )
+        .map((line) => line.textContent ?? "")
+        .join("\n");
+      if (!holder || !source.trim()) continue;
+      try {
+        const { svg } = await mermaid.render(
+          `pi-md-mermaid-t${++mermaidSeqRef.current}`,
+          source,
+        );
+        holder.innerHTML = svg;
+      } catch {
+        /* 重画失败则保留原图 */
+      }
+    }
+  };
+
+  /**
+   * 代码块 CodeMirror 扩展。
+   *
+   * Crepe 的 codeMirror feature 自带 keymap + basicSetup，这里只需追加语法
+   * 高亮主题；配色由 CSS 变量驱动，明暗主题共用一套，无需随主题重建。
+   */
+  const cmExtensions = () => [typoraCodeTheme];
 
   /* ---------- 滚动 → 高亮当前大纲标题 ---------- */
   useEffect(() => {
@@ -240,10 +307,16 @@ export default function EditorPane({
       // （latex feature 在未启用 CodeMirror 时直接抛错，编辑器将无法初始化）。
       featureConfigs: {
         [Crepe.Feature.CodeMirror]: {
-          theme: themeRef.current === "dark" ? oneDark : undefined,
-          // 无预览模式：代码块始终显示 CodeMirror 编辑态，插入/点击即可直接输入，
-          // 不需要“编辑”按钮切换。
-          previewOnlyByDefault: false,
+          // theme 显式传 null：Crepe 的默认值 oneDark 会经 defaultsDeep 补回，
+          // 而传 null 能保留下来（falsy）从而不注入，避免与下面的 Typora 配色
+          // 主题争优先级。配色随 CSS 变量在当前主题下实时生效。
+          // （类型上只接受 Extension | undefined，故此处显式转换。）
+          theme: null as unknown as undefined,
+          extensions: cmExtensions(),
+          // 有预览的块（公式 / Mermaid）默认只显示预览，源码收起；点工具条上的
+          // 「编辑」才展开编辑态。普通代码块 renderPreview 返回 null，没有预览面板，
+          // 因此仍直接显示可编辑的代码（插入即可输入）。
+          previewOnlyByDefault: true,
           // 普通代码块不渲染预览（返回 null → 无预览面板与切换按钮）；
           // mermaid 语言 → 实时渲染图表（300ms 防抖，随主题深浅切换）；
           // latex 语言由 latex feature 接管渲染 KaTeX 公式。
@@ -254,7 +327,6 @@ export default function EditorPane({
           noResultText: t("editor.noLanguage"),
           previewToggleText: (previewOnlyMode) =>
             previewOnlyMode ? t("editor.edit") : t("editor.hide"),
-          previewLabel: t("editor.preview"),
         },
         [Crepe.Feature.Placeholder]: {
           text: t("editor.placeholder"),
@@ -313,7 +385,7 @@ export default function EditorPane({
     crepe.editor.use(prism);
 
     // 内容变更 → 回写 store（笔记切换由 loadNote 抑制；
-    // 单文件模式 → externalSave，不进入笔记树）
+    // 预览会话 → externalSave，不进入笔记树）
     crepe.on((listener) => {
       listener.markdownUpdated((_ctx, markdown) => {
         if (suppressNextRef.current) {
@@ -339,6 +411,8 @@ export default function EditorPane({
       suppressNextRef.current = true;
       current.editor.action(replaceAll(target?.content ?? ""));
       suppressNextRef.current = false;
+      // 首次挂载时「只读态」effect 可能早于编辑器就绪而跳过，这里补一次
+      current.setReadonly(readonlyRef.current);
       scrollRef.current?.scrollTo({ top: 0 });
     };
 
@@ -396,21 +470,21 @@ export default function EditorPane({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale]);
 
-  /* ---------- 主题切换 → 更新代码块 CodeMirror 扩展（新初始化的块生效） ---------- */
+  /* ---------- 主题切换 → 代码块与 Mermaid 图表跟随 ----------
+   * 代码块配色本身走 CSS 变量，切换主题无需重建扩展；但 Mermaid 图表是渲染期
+   * 快照，需要按新主题重画（见 refreshMermaidPanels）。 */
   useEffect(() => {
     const current = crepeRef.current;
     if (!current || current.editor.status !== EditorStatus.Created) return;
     current.editor.action((ctx) => {
       const prev = ctx.get(codeBlockConfig.key);
-      ctx.set(codeBlockConfig.key, {
-        ...prev,
-        extensions: cmExtensions(theme === "dark"),
-      });
+      ctx.set(codeBlockConfig.key, { ...prev, extensions: cmExtensions() });
     });
+    void refreshMermaidPanels(theme);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
-  /* ---------- 切换笔记 ---------- */
+  /* ---------- 切换笔记 / 切换外部文件 ---------- */
   useEffect(() => {
     const current = crepeRef.current;
     if (!current || current.editor.status !== EditorStatus.Created) return;
@@ -421,63 +495,40 @@ export default function EditorPane({
     current.editor.action(replaceAll(note?.content ?? ""));
     suppressNextRef.current = false;
     scrollRef.current?.scrollTo({ top: 0 });
+    // 外部文件之间切换时 note.id 恒为 EXTERNAL_NOTE_ID，需靠 externalPath 触发
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [note?.id]);
+  }, [note?.id, externalPath]);
 
   return (
     <main className="relative flex min-w-0 flex-1 flex-col bg-bg">
-      {external && (
-        <div className="flex shrink-0 items-center gap-3 border-b border-edge bg-panel px-5 py-2 text-xs">
-          <span className="flex min-w-0 items-center gap-2">
+      <div className="editor-title-row flex shrink-0 items-center gap-3 border-b border-edge px-5 pb-2 pt-3">
+        {/* 侧边栏开关：单文件（预览/编辑）模式下没有侧边栏，不给出无效入口 */}
+        {!external && (
+          <button
+            onClick={onToggleSidebar}
+            title={
+              sidebarOpen ? t("editor.collapseSidebar") : t("editor.expandSidebar")
+            }
+            aria-label={
+              sidebarOpen ? t("editor.collapseSidebar") : t("editor.expandSidebar")
+            }
+            className="flex shrink-0 items-center text-faint transition-colors hover:text-ink"
+          >
             <svg
               viewBox="0 0 24 24"
-              className="h-3.5 w-3.5 shrink-0 text-accent"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" />
-              <path d="M14 3v5h5" />
+              {sidebarOpen ? (
+                <path d="M15 18l-6-6 6-6" />
+              ) : (
+                <path d="M9 18l6-6-6-6" />
+              )}
             </svg>
-            <span className="shrink-0 font-medium text-ink">
-              {t("external.banner")}
-            </span>
-            <span className="truncate text-muted">{note?.title}</span>
-            <span className="shrink-0 text-faint">{t("external.saveHint")}</span>
-          </span>
-          <button
-            onClick={onExitExternal}
-            className="ml-auto shrink-0 border border-edge2 px-3 py-1 text-muted transition-colors hover:border-edge2 hover:text-ink"
-          >
-            {t("external.exit")}
           </button>
-        </div>
-      )}
-      <div className="flex shrink-0 items-center gap-3 border-b border-edge px-5 pb-2 pt-3">
-        <button
-          onClick={onToggleSidebar}
-          title={
-            sidebarOpen ? t("editor.collapseSidebar") : t("editor.expandSidebar")
-          }
-          aria-label={
-            sidebarOpen ? t("editor.collapseSidebar") : t("editor.expandSidebar")
-          }
-          className="flex shrink-0 items-center text-faint transition-colors hover:text-ink"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            {sidebarOpen ? (
-              <path d="M15 18l-6-6 6-6" />
-            ) : (
-              <path d="M9 18l6-6-6-6" />
-            )}
-          </svg>
-        </button>
+        )}
         <input
           value={note?.title ?? ""}
           onChange={(e) =>
@@ -490,8 +541,34 @@ export default function EditorPane({
           readOnly={external}
           className="min-w-0 flex-1 bg-transparent text-lg font-semibold text-ink outline-none placeholder:text-faint disabled:cursor-default"
         />
-        {/* 标题栏右侧：导出菜单（Markdown / HTML / 图像） */}
-        <div ref={exportBoxRef} className="relative shrink-0">
+        {/* 预览模式：说明当前只读，并提供进入编辑的唯一入口 */}
+        {external && readonly && (
+          <>
+            <span className="shrink-0 text-xs text-faint">
+              {t("external.previewBadge")}
+            </span>
+            <button
+              onClick={() => setEditing(true)}
+              className="flex shrink-0 items-center gap-1.5 border border-edge2 px-3 py-1 text-xs text-muted transition-colors hover:border-edge2 hover:bg-panel2 hover:text-ink"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M13 3l4 4L7 17l-4 1 1-4z" />
+                <path d="M4 21h16" />
+              </svg>
+              {t("external.edit")}
+            </button>
+          </>
+        )}
+        {/* 标题栏右侧：导出菜单（Markdown / HTML / 图像）。预览模式只有
+            「预览 / 编辑」两态，不提供导出等额外操作。 */}
+        {!external && (
+          <div ref={exportBoxRef} className="relative shrink-0">
           <button
             onClick={() => setExportMenuOpen((v) => !v)}
             disabled={!note}
@@ -540,7 +617,8 @@ export default function EditorPane({
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
       {/* 滚动容器常驻；Crepe 挂载点随笔记切换保持稳定 */}
       <div ref={scrollRef} className="pi-md-scroll min-h-0 flex-1 overflow-y-auto">
