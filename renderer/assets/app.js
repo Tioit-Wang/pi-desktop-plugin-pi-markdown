@@ -300540,11 +300540,13 @@ body{background:#ffffff;color:#3d4852;padding:0;font-family:"Segoe UI","PingFang
           useCORS: true,
           onclone: (doc6, element5) => sanitizeCloneInlineColors(doc6, element5 ?? doc6.querySelector(".milkdown"))
         });
-        download(
-          `${safeName(note3.title)}.png`,
-          canvas.toDataURL("image/png"),
-          "image/png"
-        );
+        const png2 = await new Promise((resolve2, reject3) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve2(blob);
+            else reject3(new Error("Failed to encode PNG image"));
+          }, "image/png");
+        });
+        download(`${safeName(note3.title)}.png`, png2, "image/png");
       } finally {
         wrap5.remove();
       }

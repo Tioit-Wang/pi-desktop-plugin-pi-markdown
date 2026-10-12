@@ -263,11 +263,13 @@ body{background:#ffffff;color:#3d4852;padding:0;font-family:"Segoe UI","PingFang
         onclone: (doc, element) =>
           sanitizeCloneInlineColors(doc, element ?? doc.querySelector(".milkdown")),
       });
-      download(
-        `${safeName(note.title)}.png`,
-        canvas.toDataURL("image/png"),
-        "image/png",
-      );
+      const png = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Failed to encode PNG image"));
+        }, "image/png");
+      });
+      download(`${safeName(note.title)}.png`, png, "image/png");
     } finally {
       wrap.remove();
     }
