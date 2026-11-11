@@ -1,3 +1,7 @@
+/**
+ * 对话框（nomo: ui/dialogs.rs）
+ * 卡片 r12 + 1px 边框 + 20/60 浮动阴影，入场 160ms 淡入 + 6px 上移。
+ */
 import { useEffect, useRef } from "react";
 import { t } from "../lib/i18n";
 
@@ -15,9 +19,17 @@ interface Props {
 
 export default function Modal({ modal, onClose, onSubmit }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const initial = useRef("");
 
   useEffect(() => {
-    if (modal && modal.kind !== "delete") inputRef.current?.focus();
+    if (!modal) return;
+    initial.current = modal.kind === "rename" ? modal.current : "";
+    if (modal.kind !== "delete") {
+      window.setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 20);
+    }
   }, [modal]);
 
   if (!modal) return null;
@@ -36,80 +48,49 @@ export default function Modal({ modal, onClose, onSubmit }: Props) {
       ? t("modal.noteTitleLabel")
       : modal.kind === "new-folder"
         ? t("modal.folderNameLabel")
-        : modal.kind === "rename"
-          ? t("modal.newNameLabel")
-          : "";
-  const defaultValue =
-    modal.kind === "rename"
-      ? modal.current
-      : modal.kind === "new-note"
-        ? ""
-        : modal.kind === "new-folder"
-          ? ""
-          : "";
+        : t("modal.newNameLabel");
+
+  const submit = () => {
+    if (modal.kind === "delete") {
+      onSubmit();
+      return;
+    }
+    const value = inputRef.current?.value ?? "";
+    onSubmit(value.trim() || undefined);
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-[900] flex items-center justify-center bg-black/60"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="w-[360px] border border-edge2 bg-panel2 p-5">
-        <h3 className="mb-1 text-sm font-semibold text-ink">{title}</h3>
-        {modal.kind === "delete" ? (
-          <p className="text-xs leading-5 text-muted">
+    <div className="dialog-backdrop" onMouseDown={onClose}>
+      <div
+        className="dialog"
+        role="dialog"
+        aria-modal="true"
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") onClose();
+          if (event.key === "Enter" && isInput) submit();
+        }}
+      >
+        <div className="dialog-title">{title}</div>
+        {isInput ? (
+          <label className="dialog-field">
+            <span>{label}</span>
+            <input ref={inputRef} defaultValue={initial.current} placeholder={t("modal.namePlaceholder")} spellCheck={false} />
+          </label>
+        ) : (
+          <p className="dialog-body">
             {modal.childCount > 0
-              ? t("modal.deleteConfirm", {
-                  name: modal.name,
-                  count: modal.childCount,
-                })
+              ? t("modal.deleteConfirm", { name: modal.name, count: modal.childCount })
               : t("modal.deleteConfirmSimple", { name: modal.name })}
           </p>
-        ) : (
-          <label className="mb-1 block text-xs text-muted">{label}</label>
         )}
-
-        {isInput && (
-          <input
-            ref={inputRef}
-            className="mt-1 w-full border border-edge2 bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-ink"
-            defaultValue={defaultValue}
-            placeholder={
-              modal.kind === "new-note"
-                ? t("modal.noteTitlePlaceholder")
-                : t("modal.namePlaceholder")
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter")
-                onSubmit((e.target as HTMLInputElement).value);
-              if (e.key === "Escape") onClose();
-            }}
-          />
-        )}
-
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            className="border border-edge2 px-3.5 py-1.5 text-xs text-muted hover:bg-panel hover:text-ink"
-            onClick={onClose}
-          >
+        <div className="dialog-actions">
+          <button className="btn-ghost" onClick={onClose}>
             {t("common.cancel")}
           </button>
-          {isInput ? (
-            <button
-              className="bg-accent px-3.5 py-1.5 text-xs text-onaccent hover:bg-accent2"
-              onClick={() => onSubmit(inputRef.current?.value)}
-            >
-              {t("common.confirm")}
-            </button>
-          ) : (
-            <button
-              className="bg-danger px-3.5 py-1.5 text-xs text-white hover:opacity-90"
-              onClick={() => onSubmit()}
-            >
-              {t("common.delete")}
-            </button>
-          )}
+          <button className="btn-primary" autoFocus={!isInput} onClick={submit}>
+            {modal.kind === "delete" ? t("common.delete") : t("common.confirm")}
+          </button>
         </div>
       </div>
     </div>

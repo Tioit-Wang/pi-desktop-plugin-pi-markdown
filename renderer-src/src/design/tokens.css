@@ -1,0 +1,191 @@
+/*
+ * 设计令牌 —— 直接取自 nomo（src-gpui/src/theme.rs light()/dark() 与
+ * resources/color-themes.json 的同名 token）。改配色只改这里。
+ */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* 表面 */
+  --app-bg: #f6f7f9;
+  --rail: #f3f4f6;
+  --surface: #ffffff;
+  --doc-bg: #ffffff;
+  --chrome: #f8f9fb;
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #d8d8d8;
+
+  /* 文字 */
+  --fg: #202428;
+  --heading: #171a1f;
+  --muted: #68707a;
+  --faint: #8b939c;
+
+  /* 线 / 交互 */
+  --border: #dfe3e8;
+  --border-soft: #eceff2;
+  --hover: #edf1f2;
+  --press: #e4e9ea;
+  --sidebar-active: #e7f0ee;
+  --selection: rgba(47, 125, 111, 0.18);
+  --caret: #2f7d6f;
+
+  /* 主色与语义色 */
+  --accent: #2f7d6f;
+  --accent-strong: #174e45;
+  --accent-fill: #2f7d6f;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(47, 125, 111, 0.1);
+  --link: #116d8f;
+  --success: #166534;
+  --warning: #9a6700;
+  --danger: #b42318;
+  --danger-soft: rgba(180, 35, 24, 0.1);
+
+  /* 文档块 */
+  --quote-border: #7f9f97;
+  --quote-fg: #465753;
+  --inline-code-bg: #eef4f2;
+  --inline-code-fg: #174e45;
+  --mark-bg: rgba(255, 229, 143, 0.6);
+  --table-border: #dfe3e8;
+  --table-header: #f0f2f4;
+  --hr: #dfe3e8;
+
+  /* 代码 */
+  --code-bg: #f5f6f8;
+  --code-border: #e0e2e6;
+  --code-fg: #24292e;
+  --code-keyword: #d73a49;
+  --code-string: #032f62;
+  --code-number: #005cc5;
+  --code-comment: #6a737d;
+  --code-punct: #57606a;
+  --code-function: #6f42c1;
+  --code-tag: #22863a;
+  --code-param: #e36209;
+  --code-ins: #22863a;
+  --code-del: #b31d28;
+
+  /* 提示块（两种主题同一套色相） */
+  --callout-note: #3b82f6;
+  --callout-note-fg: #1e40af;
+  --callout-tip: #22c55e;
+  --callout-tip-fg: #166534;
+  --callout-important: #a855f7;
+  --callout-important-fg: #6b21a8;
+  --callout-warning: #f59e0b;
+  --callout-warning-fg: #92400e;
+  --callout-caution: #ef4444;
+  --callout-caution-fg: #991b1b;
+
+  /* 滚动条 */
+  --scroll-thumb: rgba(126, 136, 146, 0.72);
+  --scroll-thumb-hover: #66717c;
+
+  /* 阴影 */
+  --shadow-raised: 0 1px 4px rgba(22, 32, 44, 0.08);
+  --shadow-floating: 0 14px 34px rgba(22, 32, 44, 0.08);
+  --shadow-dialog: 0 20px 60px rgba(0, 0, 0, 0.22);
+  --workspace-edge: rgba(223, 227, 232, 0.76);
+  --workspace-shadow-near: rgba(22, 32, 44, 0.04);
+  --workspace-shadow-soft: rgba(22, 32, 44, 0.06);
+
+  /* 圆角 / 间距 / 控件 */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --control-sm: 28px;
+  --control-md: 34px;
+  --control-lg: 38px;
+  --toolbar-h: 44px;
+  --tab-h: 30px;
+  --tree-row: 30px;
+
+  /* 字体 */
+  --ui-font: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  --doc-font: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "PingFang SC", "Songti SC", serif-alt, sans-serif;
+  --mono-font: "Cascadia Code", "JetBrains Mono", Consolas, "SFMono-Regular", monospace;
+  --doc-zoom: 1;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --app-bg: #16191d;
+  --rail: #1b1f24;
+  --surface: #1f2328;
+  --doc-bg: #1f2328;
+  --chrome: #20262e;
+  --dropdown-bg: #1e1e1e;
+  --dropdown-border: #3a3a3a;
+
+  --fg: #d7dce1;
+  --heading: #eef1f4;
+  --muted: #8b949e;
+  --faint: #6f7780;
+
+  --border: #30363d;
+  --border-soft: #262b31;
+  --hover: #2a3037;
+  --press: #333a42;
+  --sidebar-active: #23332f;
+  --selection: rgba(79, 179, 160, 0.25);
+  --caret: #4fb3a0;
+
+  --accent: #4fb3a0;
+  --accent-strong: #8fd6c7;
+  --accent-fill: #2f7d6f;
+  --on-accent: #0d1117;
+  --accent-soft: rgba(79, 179, 160, 0.12);
+  --link: #58a6ff;
+  --success: #86efac;
+  --warning: #d4a72c;
+  --danger: #ff8a7a;
+  --danger-soft: rgba(255, 138, 122, 0.12);
+
+  --quote-border: #6f938b;
+  --quote-fg: #c8d8d4;
+  --inline-code-bg: #263330;
+  --inline-code-fg: #8fd6c7;
+  --mark-bg: rgba(187, 128, 9, 0.4);
+  --table-border: #353b42;
+  --table-header: #262b31;
+  --hr: #30363d;
+
+  --code-bg: #262b31;
+  --code-border: #353b42;
+  --code-fg: #e1e4e8;
+  --code-keyword: #f97583;
+  --code-string: #9ecbff;
+  --code-number: #79b8ff;
+  --code-comment: #6a737d;
+  --code-punct: #e1e4e8;
+  --code-function: #b392f0;
+  --code-tag: #85e89d;
+  --code-param: #ffab70;
+  --code-ins: #85e89d;
+  --code-del: #fdaeb7;
+
+  --callout-note-fg: #93c5fd;
+  --callout-tip-fg: #86efac;
+  --callout-important-fg: #d8b4fe;
+  --callout-warning-fg: #fcd34d;
+  --callout-caution-fg: #fca5a5;
+
+  --scroll-thumb: rgba(139, 148, 158, 0.69);
+  --scroll-thumb-hover: #a3adb8;
+
+  --shadow-raised: 0 1px 4px rgba(0, 0, 0, 0.18);
+  --shadow-floating: 0 14px 34px rgba(0, 0, 0, 0.32);
+  --shadow-dialog: 0 20px 60px rgba(0, 0, 0, 0.42);
+  --workspace-edge: rgba(48, 54, 61, 0.9);
+  --workspace-shadow-near: rgba(0, 0, 0, 0.16);
+  --workspace-shadow-soft: rgba(0, 0, 0, 0.22);
+}

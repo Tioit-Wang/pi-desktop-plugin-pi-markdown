@@ -1,97 +1,130 @@
-import type { SaveState, ThemeMode } from "../types";
-import { getLocale, t } from "../lib/i18n";
+/**
+ * 悬浮状态栏（nomo: ui/workspace/status.rs）
+ * 右下角 gap8、每个触发器 h28/r8/mono 13，hover 时边框转 accent 并上浮 1px。
+ */
+import { useState } from "react";
+import Popup, { MenuItem } from "./Popup";
+import type { SaveState } from "../types";
+import { t } from "../lib/i18n";
 
 interface Props {
-  saveState: SaveState;
+  save: SaveState;
+  words: number;
+  chars: number;
+  lines: number;
+  readingMinutes: number;
+  zoom: number;
+  onZoom(zoom: number): void;
   dataDir: string | null;
-  noteCount: number;
-  activeTitle: string | null;
-  wordCount: number;
-  theme: ThemeMode;
-  onToggleTheme(): void;
+  externalPath: string | null;
+  mode: "wysiwyg" | "split" | "source";
 }
 
+type Anchor = { x: number; y: number; width: number; height: number } | null;
+
 export default function StatusBar({
-  saveState,
+  save,
+  words,
+  chars,
+  lines,
+  readingMinutes,
+  zoom,
+  onZoom,
   dataDir,
-  noteCount,
-  activeTitle,
-  wordCount,
-  theme,
-  onToggleTheme,
+  externalPath,
+  mode,
 }: Props) {
-  const time = saveState.at
-    ? new Date(saveState.at).toLocaleTimeString(getLocale(), { hour12: false })
-    : "";
+  const [saveAnchor, setSaveAnchor] = useState<Anchor>(null);
+  const [zoomAnchor, setZoomAnchor] = useState<Anchor>(null);
+
+  const open = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    setter: (value: Anchor) => void,
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setter({ x: rect.left, y: rect.top, width: rect.width, height: rect.height });
+  };
+
+  const saveLabel =
+    save.status === "saving"
+      ? t("status.saving")
+      : save.status === "error"
+        ? t("status.saveFailed")
+        : save.at
+          ? t("status.savedAt", { time: new Date(save.at).toLocaleTimeString() })
+          : t("status.ready");
+
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-edge bg-panel px-4 text-[11px] text-muted">
-      <span className="flex items-center gap-1.5 truncate">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-3 w-3 shrink-0"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <path d="M3 7h18M3 12h18M3 17h12" />
-        </svg>
-        {dataDir
-          ? t("status.storageLocation", { dir: dataDir })
-          : t("status.previewMode")}
-      </span>
-      <span className="ml-auto flex shrink-0 items-center gap-3">
-        {activeTitle && (
-          <span>{t("status.chars", { count: wordCount })}</span>
-        )}
-        <span>{t("status.notes", { count: noteCount })}</span>
-        <button
-          onClick={onToggleTheme}
-          title={theme === "dark" ? t("status.toLight") : t("status.toDark")}
-          aria-label={theme === "dark" ? t("status.toLight") : t("status.toDark")}
-          className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
-        >
-          {theme === "dark" ? (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
-            </svg>
-          )}
-          {theme === "dark" ? t("status.light") : t("status.dark")}
-        </button>
-        <span
-          className={
-            saveState.status === "error"
-              ? "text-danger"
-              : saveState.status === "saving"
-                ? "text-ink"
-                : ""
-          }
-        >
-          {saveState.status === "saving"
-            ? t("status.saving")
-            : saveState.status === "error"
-              ? t("status.saveFailed")
-              : time
-                ? t("status.savedAt", { time })
-                : t("status.ready")}
-        </span>
-      </span>
-    </footer>
+    <div className="status-bar">
+      <button
+        className={"status-trigger" + (save.status === "error" ? " is-danger" : "")}
+        onClick={(event) => open(event, setSaveAnchor)}
+        title={saveLabel}
+      >
+        <span className={"status-dot is-" + save.status} />
+        <span className="status-text">{saveLabel}</span>
+      </button>
+      <button className="status-trigger" title={t("status.words")}>
+        {words.toLocaleString()} <span className="status-unit">{t("status.unitWords")}</span>
+      </button>
+      <button className="status-trigger" title={t("status.chars", { count: chars })}>
+        {lines.toLocaleString()} <span className="status-unit">{t("status.unitLines")}</span>
+      </button>
+      <button className="status-trigger" title={t("status.reading")}>
+        {readingMinutes} <span className="status-unit">{t("status.unitMinutes")}</span>
+      </button>
+      <button
+        className={"status-trigger" + (zoomAnchor ? " is-active" : "")}
+        onClick={(event) => open(event, setZoomAnchor)}
+        title={t("status.zoom")}
+      >
+        {Math.round(zoom * 100)}%
+      </button>
+
+      {saveAnchor && (
+        <Popup anchor={saveAnchor} align="end" onClose={() => setSaveAnchor(null)} minWidth={208}>
+          <div className="popover-title">{t("status.detailTitle")}</div>
+          <div className="status-detail">
+            <div>
+              <span>{t("status.mode")}</span>
+              <b>{t(mode === "wysiwyg" ? "toolbar.modeWysiwyg" : mode === "split" ? "toolbar.modeSplit" : "toolbar.modeSource")}</b>
+            </div>
+            <div>
+              <span>{t("status.words")}</span>
+              <b>{words.toLocaleString()}</b>
+            </div>
+            <div>
+              <span>{t("status.charsShort")}</span>
+              <b>{chars.toLocaleString()}</b>
+            </div>
+            <div>
+              <span>{t("status.location")}</span>
+              <b title={externalPath ?? dataDir ?? "-"}>{externalPath ?? dataDir ?? t("status.browserMode")}</b>
+            </div>
+          </div>
+        </Popup>
+      )}
+
+      {zoomAnchor && (
+        <Popup anchor={zoomAnchor} align="end" onClose={() => setZoomAnchor(null)} minWidth={196}>
+          <div className="popover-title">{t("status.zoom")}</div>
+          <MenuItem label={t("status.zoomReset")} hint="100%" onClick={() => { onZoom(1); setZoomAnchor(null); }} />
+          <MenuItem label="120%" onClick={() => { onZoom(1.2); setZoomAnchor(null); }} />
+          <MenuItem label="140%" onClick={() => { onZoom(1.4); setZoomAnchor(null); }} />
+          <MenuItem label="160%" onClick={() => { onZoom(1.6); setZoomAnchor(null); }} />
+          <MenuItem label="90%" onClick={() => { onZoom(0.9); setZoomAnchor(null); }} />
+          <div className="zoom-slider">
+            <input
+              type="range"
+              min={80}
+              max={160}
+              step={5}
+              value={Math.round(zoom * 100)}
+              onChange={(event) => onZoom(Number(event.target.value) / 100)}
+            />
+          </div>
+        </Popup>
+      )}
+    </div>
   );
 }

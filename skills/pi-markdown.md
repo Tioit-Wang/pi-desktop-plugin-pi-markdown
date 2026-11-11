@@ -20,9 +20,13 @@ description: Describe when the agent should follow this skill.
   `tree` 为混合树：`{ id, type:'folder', name, children[] }` 与
   `{ id, type:'note', title, content, updatedAt }`（图片为 data URL 内嵌）。
 - 面板：`renderer/index.html`（esbuild 构建产物，源码在 `renderer-src/`，
-  `npm run build` 重新生成）。编辑器为 Milkdown Crepe——
-  单栏所见即所得 Markdown：输入 `# `、`- [ ]`、`> `、`$…$` 等语法即时成样式，
-  `/` 斜杠菜单插块；```` ```mermaid ```` 代码块实时渲染 Mermaid 图表；图片经 ImageBlock onUpload 转 data URL 内嵌正文。
+  `npm run build` 重新生成）。编辑器为自研块级内核（0.6.0 起，参照 nomo）：
+  正文按块渲染成排版结果，点进某一块直接改该块 Markdown 源码，移开焦点回到排版；
+  工具栏中间切换「编辑 / 双栏 / 源码」三视图，共用同一会话与撤销历史。
+  `Enter` 拆块、行首 `Backspace` 合并、`Tab` 缩进列表、空块 `/` 唤起 14 项插入菜单，
+  `Ctrl/Cmd+B/I/E` 包裹行内格式；代码高亮按需加载语法包（8 MiB / 120 项 LRU），
+  Mermaid 图表引擎独立成包按需注入，派生数据（大纲/统计）300 ms 静默防抖。
+  实现要点与实测数据见 `docs/nomo-refactor.md`。
   界面语言跟随宿主（`app.getLocale` 桥接通道），主题默认跟随宿主主题。
 - 通道：面板 → 主进程走 `pluginBridge.invoke("skill.setEnabled", { id: "note.sync", tree, activeId, theme, themeSource })`，
   主进程 `onPanelInvoke` 归一化后落盘；`store.path` 返回数据目录；`app.getLocale` 返回宿主语言。

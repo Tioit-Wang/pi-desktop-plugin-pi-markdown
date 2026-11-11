@@ -71,3 +71,11 @@ export interface ExternalFile {
 
 /** 外部文件在编辑器中使用的虚拟笔记 id */
 export const EXTERNAL_NOTE_ID = "__pi_md_external__";
+
+/** 大纲条目（与 core/md/types 的 HeadingEntry 对齐） */
+export interface HeadingEntry {
+  level: number;
+  text: string;
+  blockId: string;
+  index: number;
+}

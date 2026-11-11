@@ -1,27 +1,32 @@
-import type { SearchHit, TreeNode } from "../types";
+/**
+ * 侧栏（nomo: ui/workspace.rs 的 rail + explorer + outline）
+ * 250px rail 底色，头部 strip px8/pt10/pb6，搜索 26px，行高 28，大纲 32/24。
+ */
+import { useMemo, useState } from "react";
+import type { DropPos, HeadingEntry, NoteNode, SideTab, SearchHit, TreeNode } from "../types";
 import NoteTree from "./NoteTree";
-import Outline from "./Outline";
 import { t } from "../lib/i18n";
 
 interface Props {
   tree: TreeNode[];
   activeId: string | null;
   expanded: Record<string, boolean>;
-  tab: "notes" | "outline";
+  tab: SideTab;
   query: string;
-  outlineItems: { level: number; text: string }[];
+  outline: HeadingEntry[];
   searchHits: SearchHit[];
-  activeHeading: number;
-  onTab(tab: "notes" | "outline"): void;
-  onQuery(q: string): void;
+  activeHeadingId: string | null;
+  collapsed: boolean;
+  noteCount: number;
+  onTab(tab: SideTab): void;
+  onQuery(query: string): void;
   onOpen(id: string): void;
   onToggle(id: string): void;
-  onMove(id: string, targetId: string, pos: "before" | "inside" | "after"): void;
-  onContextMenu(e: React.MouseEvent, node: TreeNode): void;
+  onMove(id: string, targetId: string, pos: DropPos): void;
+  onContext(event: React.MouseEvent, node: TreeNode): void;
   onNewNote(parentId: string | null): void;
   onNewFolder(parentId: string | null): void;
-  onNavigateHeading(index: number): void;
-  collapsed: boolean;
+  onNavigateHeading(blockIndex: number): void;
 }
 
 export default function Sidebar({
@@ -30,193 +35,221 @@ export default function Sidebar({
   expanded,
   tab,
   query,
-  outlineItems,
+  outline,
   searchHits,
-  activeHeading,
+  activeHeadingId,
+  collapsed,
+  noteCount,
   onTab,
   onQuery,
   onOpen,
   onToggle,
   onMove,
-  onContextMenu,
+  onContext,
   onNewNote,
   onNewFolder,
   onNavigateHeading,
-  collapsed,
 }: Props) {
-  if (collapsed) return null;
   return (
-    <aside className="flex w-[268px] shrink-0 flex-col border-r border-edge bg-panel">
-      {/* 搜索框 */}
-      <div className="p-3 pb-2">
-        <div className="relative">
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+    <aside className={"sidebar" + (collapsed ? " is-collapsed" : "")}>
+      <div className="sidebar-head">
+        <span className="sidebar-title">{t("sidebar.library")}</span>
+        <span className="sidebar-count">{noteCount}</span>
+        <div className="sidebar-actions">
+          <button
+            className="icon-btn"
+            title={t("common.newNote")}
+            onClick={() => onNewNote(null)}
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={t("sidebar.searchPlaceholder")}
-            className="w-full border border-edge bg-bg py-1.5 pl-8 pr-3 text-xs text-ink placeholder:text-faint outline-none transition-colors focus:border-ink"
-          />
-          {query && (
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-faint hover:text-ink"
-              onClick={() => onQuery("")}
-              title={t("common.clear")}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5"
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <path d="M10 4.5v11M4.5 10h11" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            className="icon-btn"
+            title={t("common.newFolder")}
+            onClick={() => onNewFolder(null)}
+          >
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <path
+                d="M2.6 5.4A1.6 1.6 0 014.2 3.8h3l1.4 1.5h5.2a1.6 1.6 0 011.6 1.6v7.7a1.6 1.6 0 01-1.6 1.6H4.2a1.6 1.6 0 01-1.6-1.6z"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          )}
+                strokeWidth="1.4"
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* 标签切换 */}
-      <div className="flex gap-1 px-3">
-        {(
-          [
-            { key: "notes", label: t("sidebar.tabNotes") },
-            { key: "outline", label: t("sidebar.tabOutline") },
-          ] as const
-        ).map((t2) => (
-          <button
-            key={t2.key}
-            onClick={() => onTab(t2.key)}
-            className={`px-3 py-1 text-xs transition-colors ${
-              tab === t2.key
-                ? "bg-sel font-medium text-onsel"
-                : "text-muted hover:bg-panel2 hover:text-ink"
-            }`}
-          >
-            {t2.label}
+      <div className="sidebar-search">
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" className="search-icon">
+          <circle cx="7" cy="7" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M10.4 10.4L14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          placeholder={t("sidebar.searchPlaceholder")}
+          onChange={(event) => onQuery(event.target.value)}
+          spellCheck={false}
+        />
+        {query && (
+          <button className="search-clear" onClick={() => onQuery("")} title={t("common.clear")}>
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+              <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </button>
-        ))}
+        )}
       </div>
 
-      {/* 内容区 */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {query ? (
-          searchHits.length === 0 ? (
-            <p className="px-3 py-8 text-center text-xs text-faint">
-              {t("sidebar.noResults", { query })}
-            </p>
+      <div className="sidebar-tabs" role="tablist">
+        <button
+          role="tab"
+          aria-selected={tab === "notes"}
+          className={"tab" + (tab === "notes" ? " is-active" : "")}
+          onClick={() => onTab("notes")}
+        >
+          {t("sidebar.tabNotes")}
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "outline"}
+          className={"tab" + (tab === "outline" ? " is-active" : "")}
+          onClick={() => onTab("outline")}
+        >
+          {t("sidebar.tabOutline")}
+        </button>
+      </div>
+
+      <div className="sidebar-body">
+        {tab === "notes" ? (
+          query.trim() ? (
+            <SearchList query={query} hits={searchHits} activeId={activeId} onOpen={onOpen} />
           ) : (
-            <div className="flex flex-col gap-1">
-              {searchHits.map((hit) => (
-                <button
-                  key={hit.node.id}
-                  onClick={() => onOpen(hit.node.id)}
-                  className="border border-transparent px-2.5 py-2 text-left transition-colors hover:border-edge2 hover:bg-panel2"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-3.5 w-3.5 shrink-0 text-faint"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    >
-                      <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" />
-                      <path d="M14 3v5h5" />
-                    </svg>
-                    <span className="truncate text-xs font-medium text-ink">
-                      {hit.node.title}
-                    </span>
-                    {hit.inTitle && (
-                      <span className="shrink-0 bg-panel2 px-1 py-px text-[9px] text-ink">
-                        {t("sidebar.titleBadge")}
-                      </span>
-                    )}
-                  </div>
-                  {hit.path && (
-                    <p className="mt-0.5 truncate text-[10px] text-faint">
-                      {hit.path}
-                    </p>
-                  )}
-                  {!hit.inTitle && (
-                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted">
-                      {hit.snippet}
-                    </p>
-                  )}
-                </button>
-              ))}
-              <p className="px-2 pt-1 text-center text-[10px] text-faint">
-                {t("sidebar.resultCount", { count: searchHits.length })}
-              </p>
-            </div>
+            <NoteTree
+              nodes={tree}
+              depth={0}
+              activeId={activeId}
+              expanded={expanded}
+              onOpen={onOpen}
+              onToggle={onToggle}
+              onContext={onContext}
+              onMove={onMove}
+            />
           )
-        ) : tab === "notes" ? (
-          <NoteTree
-            nodes={tree}
-            depth={0}
-            activeId={activeId}
-            expanded={expanded}
-            onOpen={onOpen}
-            onToggle={onToggle}
-            onContext={onContextMenu}
-            onMove={onMove}
-          />
         ) : (
-          <Outline
-            items={outlineItems}
-            activeIndex={activeHeading}
+          <OutlineList
+            items={outline}
+            activeId={activeHeadingId}
             onNavigate={onNavigateHeading}
           />
         )}
       </div>
-
-      {/* 底部操作 */}
-      {tab === "notes" && !query && (
-        <div className="flex gap-2 border-t border-edge p-2">
-          <button
-            onClick={() => onNewNote(null)}
-            className="flex flex-1 items-center justify-center gap-1.5 bg-accent py-1.5 text-xs text-onaccent transition-colors hover:bg-accent2"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            {t("common.newNote")}
-          </button>
-          <button
-            onClick={() => onNewFolder(null)}
-            className="flex flex-1 items-center justify-center gap-1.5 border border-edge py-1.5 text-xs text-muted transition-colors hover:border-edge2 hover:text-ink"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-              <path d="M12 11v4M10 13h4" />
-            </svg>
-            {t("common.newFolder")}
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
 
+function SearchList({
+  query,
+  hits,
+  activeId,
+  onOpen,
+}: {
+  query: string;
+  hits: SearchHit[];
+  activeId: string | null;
+  onOpen(id: string): void;
+}) {
+  if (hits.length === 0) {
+    return <div className="sidebar-empty">{t("sidebar.noResults", { query })}</div>;
+  }
+  return (
+    <div className="search-list">
+      <div className="search-meta">{t("sidebar.resultCount", { count: hits.length })}</div>
+      {hits.map((hit) => (
+        <button
+          key={hit.node.id}
+          className={"search-hit" + (hit.node.id === activeId ? " is-active" : "")}
+          onClick={() => onOpen(hit.node.id)}
+          title={hit.path}
+        >
+          <span className="hit-title">
+            {hit.node.title || t("common.untitledNote")}
+            {hit.inTitle && <span className="hit-badge">{t("sidebar.titleBadge")}</span>}
+          </span>
+          <span className="hit-path">{hit.path}</span>
+          {hit.snippet && <span className="hit-snippet">{hit.snippet}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OutlineList({
+  items,
+  activeId,
+  onNavigate,
+}: {
+  items: HeadingEntry[];
+  activeId: string | null;
+  onNavigate(blockIndex: number): void;
+}) {
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+  const visible = useMemo(() => {
+    const out: { item: HeadingEntry; parents: number[] }[] = [];
+    const stack: HeadingEntry[] = [];
+    for (const item of items) {
+      while (stack.length && stack[stack.length - 1].level >= item.level) stack.pop();
+      const parents = stack.map((s) => s.level);
+      stack.push(item);
+      if (parents.some((level) => collapsed[level])) continue;
+      out.push({ item, parents });
+    }
+    return out;
+  }, [items, collapsed]);
+
+  if (items.length === 0) {
+    return <div className="sidebar-empty">{t("outline.empty")}</div>;
+  }
+
+  return (
+    <div className="outline-list">
+      {visible.map(({ item }) => {
+        const hasChildren = items.some((other) => other.level > item.level && other.index > item.index);
+        const isCollapsed = !!collapsed[item.level];
+        return (
+          <div
+            key={item.blockId}
+            className={"outline-row" + (activeId === item.blockId ? " is-active" : "")}
+            style={{ paddingLeft: 10 + (item.level - 1) * 16 }}
+            onClick={() => onNavigate(item.index)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onNavigate(item.index);
+            }}
+          >
+            {hasChildren ? (
+              <button
+                className={"outline-chevron" + (isCollapsed ? " is-collapsed" : "")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setCollapsed((prev) => ({ ...prev, [item.level]: !prev[item.level] }));
+                }}
+              >
+                <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : (
+              <span className="outline-chevron is-empty" />
+            )}
+            <span className="outline-label">{item.text}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export type { NoteNode };
